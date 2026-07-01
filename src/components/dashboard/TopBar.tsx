@@ -2,18 +2,17 @@ import { Plus, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SidebarTrigger } from "@/components/dashboard/sidebar/SidebarTrigger";
 
 /**
- * Dashboard top bar: brand, global search, and the "New Item" action.
- * Display only for phase 1 — no interactivity is wired up yet.
+ * Dashboard top bar: mobile sidebar trigger, global search, and the "New Item"
+ * action. Search stays display only until later phases wire it up; the brand
+ * now lives in the sidebar header.
  */
 export function TopBar() {
   return (
     <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border px-4">
-      <div className="flex flex-col leading-tight">
-        <span className="text-sm font-semibold">DevStash</span>
-        <span className="text-xs text-muted-foreground">Store Smarter</span>
-      </div>
+      <SidebarTrigger />
 
       <div className="relative mx-auto w-full max-w-xl">
         <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
