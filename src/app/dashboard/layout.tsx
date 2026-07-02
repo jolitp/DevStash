@@ -11,6 +11,9 @@ import { getSidebarItemTypes } from "@/lib/db/item-types";
 // The sidebar reads live item types and collections from the database.
 export const dynamic = "force-dynamic";
 
+/** Item types gated behind the Pro plan (file uploads & images). */
+const PRO_TYPES = new Set(["file", "image"]);
+
 /**
  * Dashboard shell: a full-height collapsible sidebar on the left, with the top
  * bar and main workspace stacked to its right. The sidebar becomes an
@@ -32,6 +35,7 @@ export default async function DashboardLayout({
     icon: type.icon ?? "Folder",
     color: type.color,
     count: type.count,
+    pro: PRO_TYPES.has(type.name),
   }));
 
   const favoriteCollections: NavLink[] = collections.favorites.map(

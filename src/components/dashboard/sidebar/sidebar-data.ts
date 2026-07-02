@@ -18,6 +18,8 @@ export interface NavLink {
   count?: number;
   /** when present (incl. null), render a colored dot instead of an icon */
   dotColor?: string | null;
+  /** show a "PRO" badge (Pro-tier types like File and Image) */
+  pro?: boolean;
 }
 
 /** "snippet" -> "Snippet" for display labels. */
