@@ -1,4 +1,5 @@
 import {
+  Code,
   Code2,
   File,
   FileText,
@@ -8,32 +9,36 @@ import {
   Sparkles,
   SquareTerminal,
   Star,
+  StickyNote,
+  Terminal,
 } from "lucide-react";
 
-import type { Item } from "@/lib/mock-data";
-import { fileExtension, formatRelativeTime } from "@/lib/format";
+import type { DashboardItem } from "@/lib/db/items";
+import { fileExtension, formatFileSize, formatRelativeTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-
-import { referenceNow, typeById } from "./dashboard-data";
 
 type IconComponent = React.ComponentType<{ className?: string }>;
 
-/** Resolves item-type icon names (from mock data) to components. */
+/** Resolves ItemType.icon names (from the DB) to lucide components. */
 const TYPE_ICONS: Record<string, IconComponent> = {
+  Code,
   Code2,
   Sparkles,
-  FileText,
+  Terminal,
   SquareTerminal,
+  StickyNote,
+  FileText,
   File,
   Image,
   Link: LinkIcon,
 };
 
-function Preview({ item }: { item: Item }) {
+function Preview({ item }: { item: DashboardItem }) {
   let text: string;
   if (item.contentType === "file" && item.fileName) {
     const ext = fileExtension(item.fileName);
-    text = [item.fileName, item.fileSize, ext].filter(Boolean).join(" · ");
+    const size = item.fileSize ? formatFileSize(item.fileSize) : "";
+    text = [item.fileName, size, ext].filter(Boolean).join(" · ");
   } else if (item.url) {
     text = item.url;
   } else if (item.content) {
@@ -50,10 +55,16 @@ function Preview({ item }: { item: Item }) {
 }
 
 /** A single item preview card for the dashboard grids. */
-export function ItemCard({ item }: { item: Item }) {
-  const type = typeById.get(item.typeId);
-  const color = type?.color;
-  const TypeIcon = type ? TYPE_ICONS[type.icon] : undefined;
+export function ItemCard({
+  item,
+  referenceNow,
+}: {
+  item: DashboardItem;
+  referenceNow: number;
+}) {
+  const { type } = item;
+  const color = type.color ?? undefined;
+  const TypeIcon = type.icon ? TYPE_ICONS[type.icon] : undefined;
 
   return (
     <article
@@ -62,11 +73,11 @@ export function ItemCard({ item }: { item: Item }) {
     >
       <div className="flex items-center gap-2">
         <span
-          className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium"
+          className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium capitalize"
           style={color ? { color, backgroundColor: `${color}1a` } : undefined}
         >
           {TypeIcon && <TypeIcon className="size-3.5" />}
-          {type?.name}
+          {type.name}
         </span>
         <div className="ml-auto flex items-center gap-1.5">
           {item.isPinned && (
@@ -82,9 +93,11 @@ export function ItemCard({ item }: { item: Item }) {
       </div>
 
       <h3 className="mt-3 font-semibold">{item.title}</h3>
-      <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-        {item.description}
-      </p>
+      {item.description && (
+        <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+          {item.description}
+        </p>
+      )}
 
       <Preview item={item} />
 
