@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  ChevronRight,
   Clock,
+  Code,
   Code2,
   File,
   FileText,
@@ -16,6 +18,7 @@ import {
   Sparkles,
   SquareTerminal,
   Star,
+  StickyNote,
   Terminal,
   X,
 } from "lucide-react";
@@ -25,25 +28,22 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 import { useSidebar } from "./sidebar-context";
-import {
-  favoriteCollections,
-  libraryLinks,
-  recentCollections,
-  typeLinks,
-  type NavLink,
-} from "./sidebar-data";
+import { libraryLinks, type NavLink } from "./sidebar-data";
 
 type IconComponent = React.ComponentType<{ className?: string }>;
 
-/** Resolves lucide export names (from mock data / nav model) to components. */
+/** Resolves lucide export names (from the nav model / ItemType.icon) to components. */
 const ICONS: Record<string, IconComponent> = {
   Layers,
   Star,
   Pin,
   Clock,
+  Code,
   Code2,
   Sparkles,
   FileText,
+  StickyNote,
+  Terminal,
   SquareTerminal,
   File,
   Image,
@@ -70,8 +70,9 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function NavItem({ link }: { link: NavLink }) {
   const pathname = usePathname();
   const { closeMobile } = useSidebar();
-  const Icon = ICONS[link.icon] ?? Folder;
   const active = pathname === link.href;
+  const isDot = link.dotColor !== undefined;
+  const Icon = link.icon ? ICONS[link.icon] ?? Folder : Folder;
 
   return (
     <Link
@@ -86,10 +87,19 @@ function NavItem({ link }: { link: NavLink }) {
         "group-data-[collapsed=true]/sidebar:lg:justify-center group-data-[collapsed=true]/sidebar:lg:px-0",
       )}
     >
-      <Icon
-        className="size-4 shrink-0"
-        {...(link.color ? { style: { color: link.color } } : {})}
-      />
+      {isDot ? (
+        <span
+          className="size-3 shrink-0 rounded-full bg-muted-foreground"
+          {...(link.dotColor
+            ? { style: { backgroundColor: link.dotColor } }
+            : {})}
+        />
+      ) : (
+        <Icon
+          className="size-4 shrink-0"
+          {...(link.color ? { style: { color: link.color } } : {})}
+        />
+      )}
       <span className={cn("flex-1 truncate", HIDE_ON_COLLAPSE)}>
         {link.label}
       </span>
@@ -107,7 +117,15 @@ function NavItem({ link }: { link: NavLink }) {
   );
 }
 
-export function Sidebar() {
+export function Sidebar({
+  typeLinks,
+  favoriteCollections,
+  recentCollections,
+}: {
+  typeLinks: NavLink[];
+  favoriteCollections: NavLink[];
+  recentCollections: NavLink[];
+}) {
   const { isCollapsed, toggleCollapsed, isMobileOpen, closeMobile } =
     useSidebar();
 
@@ -216,6 +234,23 @@ export function Sidebar() {
                 <NavItem link={link} />
               </li>
             ))}
+            <li>
+              <Link
+                href="/collections"
+                onClick={closeMobile}
+                title="View all collections"
+                className={cn(
+                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground/60 transition-colors",
+                  "hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                  "group-data-[collapsed=true]/sidebar:lg:justify-center group-data-[collapsed=true]/sidebar:lg:px-0",
+                )}
+              >
+                <ChevronRight className="size-4 shrink-0" />
+                <span className={cn("flex-1 truncate", HIDE_ON_COLLAPSE)}>
+                  View all collections
+                </span>
+              </Link>
+            </li>
           </ul>
         </nav>
 
