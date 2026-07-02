@@ -4,14 +4,20 @@ import { Button } from "@/components/ui/button";
 import { CollectionCard } from "@/components/dashboard/main/CollectionCard";
 import {
   pinnedItems,
-  recentCollections,
   recentItems,
 } from "@/components/dashboard/main/dashboard-data";
 import { ItemCard } from "@/components/dashboard/main/ItemCard";
 import { SectionHeader } from "@/components/dashboard/main/SectionHeader";
 import { StatsCards } from "@/components/dashboard/main/StatsCards";
+import { getRecentCollections } from "@/lib/db/collections";
 
-export default function DashboardPage() {
+// Reads live data from the database, so render per-request rather than
+// prerendering at build time.
+export const dynamic = "force-dynamic";
+
+export default async function DashboardPage() {
+  const recentCollections = await getRecentCollections();
+
   return (
     <div className="mx-auto max-w-7xl space-y-8">
       <StatsCards />
