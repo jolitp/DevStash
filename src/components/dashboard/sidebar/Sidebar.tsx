@@ -25,6 +25,7 @@ import {
 
 import { currentUser } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 import { useSidebar } from "./sidebar-context";
@@ -103,6 +104,17 @@ function NavItem({ link }: { link: NavLink }) {
       <span className={cn("flex-1 truncate", HIDE_ON_COLLAPSE)}>
         {link.label}
       </span>
+      {link.pro && (
+        <Badge
+          variant="secondary"
+          className={cn(
+            "h-4 rounded px-1.5 text-[10px] font-semibold tracking-wider text-sidebar-foreground/60",
+            HIDE_ON_COLLAPSE,
+          )}
+        >
+          PRO
+        </Badge>
+      )}
       {typeof link.count === "number" && (
         <span
           className={cn(
