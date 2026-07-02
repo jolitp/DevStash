@@ -29,5 +29,16 @@ Package manager is **pnpm** (see `pnpm-lock.yaml`, `pnpm-workspace.yaml`).
 - `pnpm build` — production build
 - `pnpm start` — serve the production build
 - `pnpm lint` — ESLint (flat config, `eslint-config-next` presets)
+- `pnpm db:migrate` — create/apply a Prisma migration (dev). Also `db:generate`, `db:deploy`, `db:studio`.
 
 No test framework is configured.
+
+## Database / Prisma on NixOS
+
+This is a **NixOS** machine and Prisma has no `linux-nixos` engine binary to download, so any Prisma CLI command (`generate`, `migrate`, `validate`, `studio`) must run inside the dev shell that provides the engine:
+
+```
+nix develop            # sets PRISMA_SCHEMA_ENGINE_BINARY from flake.nix, then run pnpm db:*
+```
+
+Prisma 7 runs queries through the Neon driver adapter (no native query engine), so only the `schema-engine` is needed — see `flake.nix`.
