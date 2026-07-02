@@ -1,37 +1,9 @@
-import {
-  Code,
-  Code2,
-  File,
-  FileText,
-  Image,
-  Link as LinkIcon,
-  Pin,
-  Sparkles,
-  SquareTerminal,
-  Star,
-  StickyNote,
-  Terminal,
-} from "lucide-react";
+import { Pin, Star } from "lucide-react";
 
 import type { DashboardItem } from "@/lib/db/items";
 import { fileExtension, formatFileSize, formatRelativeTime } from "@/lib/format";
+import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 import { cn } from "@/lib/utils";
-
-type IconComponent = React.ComponentType<{ className?: string }>;
-
-/** Resolves ItemType.icon names (from the DB) to lucide components. */
-const TYPE_ICONS: Record<string, IconComponent> = {
-  Code,
-  Code2,
-  Sparkles,
-  Terminal,
-  SquareTerminal,
-  StickyNote,
-  FileText,
-  File,
-  Image,
-  Link: LinkIcon,
-};
 
 function Preview({ item }: { item: DashboardItem }) {
   let text: string;
@@ -64,7 +36,7 @@ export function ItemCard({
 }) {
   const { type } = item;
   const color = type.color ?? undefined;
-  const TypeIcon = type.icon ? TYPE_ICONS[type.icon] : undefined;
+  const TypeIcon = type.icon ? ITEM_TYPE_ICONS[type.icon] : undefined;
 
   return (
     <article

@@ -1,35 +1,8 @@
 import Link from "next/link";
-import {
-  Code,
-  Code2,
-  File,
-  FileText,
-  Folder,
-  Image,
-  Link as LinkIcon,
-  Sparkles,
-  SquareTerminal,
-  StickyNote,
-  Terminal,
-} from "lucide-react";
+import { Folder } from "lucide-react";
 
 import type { DashboardCollection } from "@/lib/db/collections";
-
-type IconComponent = React.ComponentType<{ className?: string }>;
-
-/** Resolves ItemType.icon names (from the DB) to lucide components. */
-const TYPE_ICONS: Record<string, IconComponent> = {
-  Code,
-  Code2,
-  Sparkles,
-  Terminal,
-  SquareTerminal,
-  StickyNote,
-  FileText,
-  File,
-  Image,
-  Link: LinkIcon,
-};
+import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 
 /** Compact collection card linking to its detail route. */
 export function CollectionCard({
@@ -62,7 +35,7 @@ export function CollectionCard({
       {types.length > 0 && (
         <div className="mt-3 flex items-center gap-1.5">
           {types.map((type) => {
-            const Icon = type.icon ? TYPE_ICONS[type.icon] : undefined;
+            const Icon = type.icon ? ITEM_TYPE_ICONS[type.icon] : undefined;
             if (!Icon) return null;
             return (
               <span
