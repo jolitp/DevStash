@@ -2,55 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  ChevronRight,
-  Clock,
-  Code,
-  Code2,
-  File,
-  FileText,
-  Folder,
-  Image,
-  Layers,
-  Link as LinkIcon,
-  PanelLeft,
-  Pin,
-  Sparkles,
-  SquareTerminal,
-  Star,
-  StickyNote,
-  Terminal,
-  X,
-} from "lucide-react";
+import { ChevronRight, Folder, PanelLeft, Terminal, X } from "lucide-react";
 
 import { currentUser } from "@/lib/mock-data";
+import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 import { useSidebar } from "./sidebar-context";
 import { libraryLinks, type NavLink } from "./sidebar-data";
-
-type IconComponent = React.ComponentType<{ className?: string }>;
-
-/** Resolves lucide export names (from the nav model / ItemType.icon) to components. */
-const ICONS: Record<string, IconComponent> = {
-  Layers,
-  Star,
-  Pin,
-  Clock,
-  Code,
-  Code2,
-  Sparkles,
-  FileText,
-  StickyNote,
-  Terminal,
-  SquareTerminal,
-  File,
-  Image,
-  Link: LinkIcon,
-  Folder,
-};
 
 /** Hide when the desktop rail is collapsed; always shown in the mobile drawer. */
 const HIDE_ON_COLLAPSE = "group-data-[collapsed=true]/sidebar:lg:hidden";
@@ -73,7 +34,7 @@ function NavItem({ link }: { link: NavLink }) {
   const { closeMobile } = useSidebar();
   const active = pathname === link.href;
   const isDot = link.dotColor !== undefined;
-  const Icon = link.icon ? ICONS[link.icon] ?? Folder : Folder;
+  const Icon = (link.icon ? ITEM_TYPE_ICONS[link.icon] : undefined) ?? Folder;
 
   return (
     <Link

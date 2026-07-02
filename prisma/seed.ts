@@ -315,7 +315,12 @@ async function main() {
   await prisma.itemType.deleteMany();
   await prisma.user.deleteMany();
 
-  const password = await bcrypt.hash("12345678", 12);
+  // Dev-only demo credential; override via SEED_DEMO_PASSWORD, never run this
+  // seed against a shared/staging database.
+  const password = await bcrypt.hash(
+    process.env.SEED_DEMO_PASSWORD ?? "12345678",
+    12,
+  );
   const user = await prisma.user.create({
     data: {
       email: "demo@devstash.io",

@@ -89,9 +89,8 @@ export async function getDashboardItems(
   });
 
   const items = rows.map(toDashboardItem);
-  const referenceNow =
-    items.reduce((latest, item) => Math.max(latest, Date.parse(item.updatedAt)), 0) ||
-    Date.now();
+  // Rows are ordered newest-first, so the first item carries the latest time.
+  const referenceNow = items[0] ? Date.parse(items[0].updatedAt) : Date.now();
 
   return {
     pinned: items.filter((item) => item.isPinned),
