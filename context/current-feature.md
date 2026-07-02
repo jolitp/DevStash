@@ -1,6 +1,6 @@
 # Current Feature
 
-Dashboard Collections — real data from database
+Dashboard Items — real data from database
 
 ## Status
 
@@ -12,20 +12,9 @@ Completed
 
 <!-- Goals & requirements -->
 
-Replace the dummy collection data in the dashboard main area (the 6 recent-collection cards) with real data from the Neon database via Prisma, keeping the current design. Do NOT add the items underneath yet.
-
-- Create `src/lib/db/collections.ts` with data-fetching functions
-- Fetch collections directly in the server component (no mock data)
-- Collection card border color derived from the most-used content type in that collection
-- Show small icons of all types present in that collection
-- Keep the current design (reference `context/screenshots/dashboard-ui-main.png`)
-- Update the collection stats display
-
 ## Notes
 
 <!-- Any extra notes -->
-
-Full spec: `context/features/006-dashboard-collections-spec.md`
 
 ## History
 
@@ -38,3 +27,4 @@ Full spec: `context/features/006-dashboard-collections-spec.md`
 - 2026-07-02 — Prisma 7 + Neon PostgreSQL setup: added the `prisma-client` generator (output `src/generated/prisma`, cjs) + `prisma.config.ts` (dotenv-loaded `DATABASE_URL`) + Neon serverless driver adapter in `src/lib/prisma.ts`; wrote the initial schema (User, Item, ItemType, Collection, Tag, ItemTag + NextAuth Account/Session/VerificationToken) with FK indexes and cascade deletes, and created/applied migration `20260702120514_init` to the Neon dev branch. Added `flake.nix`/`flake.lock` (provides the Prisma 7 `schema-engine` on NixOS), a `scripts/test-db.ts` connectivity check, `db:*` scripts (generate/migrate/deploy/studio/test), `.env.example`, and a NixOS/Prisma note in `CLAUDE.md`. Verified with `prisma validate`, `prisma migrate status`, `pnpm db:test`, `pnpm lint`, and `pnpm build`.
 - 2026-07-02 — Seed data: added `prisma/seed.ts` (registered via `migrations.seed` in `prisma.config.ts`) that wipes the app tables and inserts a deterministic dataset — demo user `demo@devstash.io` (password hashed with bcryptjs @ 12 rounds), the 7 system item types, and 5 collections with 18 items (React Patterns snippets, AI Workflows prompts, DevOps, Terminal Commands, Design Resources) using real URLs and `connectOrCreate` tags. Added the `bcryptjs` dependency and a `db:seed` script; expanded `scripts/test-db.ts` to fetch and print the seeded user/types/collections/items. Verified with `pnpm db:seed` (idempotent re-run), `pnpm db:test`, `pnpm lint`, and `pnpm build`.
 - 2026-07-02 — Dashboard Collections (real data): added `src/lib/db/collections.ts` with `getRecentCollections()` — fetches collections + their items/types via Prisma, sorts by latest item activity, and per card derives item count, distinct types (most-used first), and an accent color from the top type. Rewrote `CollectionCard.tsx` to take the new `DashboardCollection` shape: left accent border from the most-used type color plus a row of small type-icon badges (icon-name → lucide map covering the seeded `ItemType.icon` values). Made `/dashboard` an async server component awaiting `getRecentCollections()` and added `export const dynamic = "force-dynamic"` so it reads live DB data per request instead of prerendering stale data at build. Items grids and `StatsCards` still on mock (items not migrated yet, per spec). Verified with `pnpm lint`, `pnpm build` (dashboard now `ƒ Dynamic`), and a live render against the seeded DB (correct counts, accent colors, and multi-type badges e.g. DevOps → link·2/snippet·1/command·1).
+- 2026-07-02 — Dashboard Items (real data): added `src/lib/db/items.ts` with `getDashboardItems()` — one newest-first Prisma fetch that derives the pinned grid (`isPinned`), the top-10 recent items, and a shared `referenceNow` (latest item time) for deterministic relative times; each item carries its type (name/icon/color) and flattened tag names. Added `src/lib/db/stats.ts` with `getDashboardStats()` (four parallel `count()` queries for items/collections + favorites). Rewrote `ItemCard.tsx` to take a `DashboardItem` + `referenceNow` prop (icon/border from the item type, DB icon-name→lucide map, `capitalize`d lowercase type names, null-guarded description/preview); made `StatsCards.tsx` take a `stats` prop; added `formatFileSize` to `format.ts` (DB `fileSize` is bytes). `/dashboard` now fetches stats/items/collections in parallel and only renders the Pinned section when non-empty. `dashboard-data.ts` is now unused (sidebar still reads `mock-data` directly). Verified with `pnpm lint`, `pnpm build` (dashboard still `ƒ Dynamic`), and a live render against the seeded DB (stats 18/5/2/1, type-colored badges + tags + relative times, Pinned section present).

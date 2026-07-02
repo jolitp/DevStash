@@ -2,32 +2,38 @@ import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { CollectionCard } from "@/components/dashboard/main/CollectionCard";
-import {
-  pinnedItems,
-  recentItems,
-} from "@/components/dashboard/main/dashboard-data";
 import { ItemCard } from "@/components/dashboard/main/ItemCard";
 import { SectionHeader } from "@/components/dashboard/main/SectionHeader";
 import { StatsCards } from "@/components/dashboard/main/StatsCards";
 import { getRecentCollections } from "@/lib/db/collections";
+import { getDashboardItems } from "@/lib/db/items";
+import { getDashboardStats } from "@/lib/db/stats";
 
 // Reads live data from the database, so render per-request rather than
 // prerendering at build time.
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const recentCollections = await getRecentCollections();
+  const [stats, items, recentCollections] = await Promise.all([
+    getDashboardStats(),
+    getDashboardItems(),
+    getRecentCollections(),
+  ]);
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">
-      <StatsCards />
+      <StatsCards stats={stats} />
 
-      {pinnedItems.length > 0 && (
+      {items.pinned.length > 0 && (
         <section>
           <SectionHeader title="Pinned Items" />
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {pinnedItems.map((item) => (
-              <ItemCard key={item.id} item={item} />
+            {items.pinned.map((item) => (
+              <ItemCard
+                key={item.id}
+                item={item}
+                referenceNow={items.referenceNow}
+              />
             ))}
           </div>
         </section>
@@ -53,8 +59,12 @@ export default async function DashboardPage() {
           }
         />
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {recentItems.map((item) => (
-            <ItemCard key={item.id} item={item} />
+          {items.recent.map((item) => (
+            <ItemCard
+              key={item.id}
+              item={item}
+              referenceNow={items.referenceNow}
+            />
           ))}
         </div>
       </section>
