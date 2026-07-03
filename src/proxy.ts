@@ -8,7 +8,7 @@ import authConfig from "@/auth.config";
 const { auth } = NextAuth(authConfig);
 
 // Routes that require an authenticated user.
-const PROTECTED_PREFIXES = ["/dashboard"];
+const PROTECTED_PREFIXES = ["/dashboard", "/profile"];
 
 export const proxy = auth((req) => {
   const { nextUrl } = req;
@@ -21,9 +21,9 @@ export const proxy = auth((req) => {
   );
 
   if (isProtected && !isLoggedIn) {
-    // Send unauthenticated users to NextAuth's default sign-in page, remembering
-    // where they were headed.
-    const signInUrl = new URL("/api/auth/signin", nextUrl.origin);
+    // Send unauthenticated users to the custom sign-in page, remembering where
+    // they were headed.
+    const signInUrl = new URL("/sign-in", nextUrl.origin);
     signInUrl.searchParams.set("callbackUrl", nextUrl.href);
     return NextResponse.redirect(signInUrl);
   }

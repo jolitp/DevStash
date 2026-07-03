@@ -13,6 +13,10 @@ import GitHub from "next-auth/providers/github";
 // always returns null so no bcrypt/Prisma code is pulled into the edge runtime.
 // `auth.ts` replaces it with the real password-checking implementation.
 export default {
+  // Custom auth UI replaces NextAuth's built-in pages.
+  pages: {
+    signIn: "/sign-in",
+  },
   providers: [
     GitHub,
     Credentials({
