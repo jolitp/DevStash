@@ -1,31 +1,20 @@
-# Current Feature: Auth Phase 2 — Email/Password Credentials Provider
+# Current Feature
 
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-In Progress
+Completed
 
 ## Goals
 
 <!-- Goals & requirements -->
 
-- Add a NextAuth Credentials provider for email/password sign-in, using the split-config pattern (edge-safe placeholder in `auth.config.ts`, real bcrypt validation in `auth.ts`).
-- Use `bcryptjs` (already installed) for password hashing/comparison.
-- Ensure the `User.password` field exists via migration if not already present (it already exists from the initial migration).
-- Create a registration API route at `POST /api/auth/register` that accepts `name`, `email`, `password`, `confirmPassword`; validates passwords match; rejects existing users; hashes the password; creates the user; returns a success/error response.
-- Keep GitHub OAuth working alongside the new Credentials provider.
 
 ## Notes
 
 <!-- Any extra notes -->
-
-- **Split pattern:** `auth.config.ts` adds the Credentials provider with an `authorize: () => null` placeholder (keeps Prisma/bcrypt out of the edge runtime); `auth.ts` overrides it with the real bcrypt validation logic.
-- **Registration route:** validate inputs (Zod per coding standards), check for existing user, hash with bcryptjs, create in DB, return `{ success, data, error }` shaped response.
-- **Testing:** curl the register endpoint, then sign in via `/api/auth/signin` with email/password → redirect to `/dashboard`; confirm GitHub OAuth still works.
-- Reference: Credentials provider — https://authjs.dev/getting-started/authentication/credentials
-- Spec: `context/features/012-auth-phase-2-spec.md`
 
 
 ## History
@@ -55,3 +44,5 @@ In Progress
 - 2026-07-02 — Audit quick wins: low/no-risk cleanups from the code-scanner audit. (1) Consolidated the `icon-name → lucide component` map that was duplicated across `ItemCard.tsx`, `CollectionCard.tsx`, and `Sidebar.tsx` into a single `src/lib/item-type-icons.ts` (`ITEM_TYPE_ICONS`, the union of all three prior key sets); call sites index into the shared map directly rather than a resolver function, since a component returned from a function call during render trips the `react-hooks/static-components` ESLint rule (Record indexing does not). (2) Simplified `getDashboardItems` `referenceNow` to read the newest-first `rows[0]` instead of `reduce`-ing the whole list. (3) Moved the seeded demo password to `SEED_DEMO_PASSWORD` (dev-only, safe `"12345678"` fallback) and documented it in `.env.example`. Deferred M1 (unbounded collection fetches), M3 (sidebar user still on mock data — blocked on auth), L2 (splitting `Sidebar.tsx`), and L3 (`ItemGrid` extraction). Verified with `pnpm lint` (clean) and `pnpm build` (dashboard still `ƒ Dynamic`); confirmed all seed type icons + sidebar library-link icons resolve against the consolidated map.
 
 - 2026-07-03 — Auth Phase 1 (NextAuth v5 + GitHub OAuth): installed `next-auth@5.0.0-beta.31` + `@auth/prisma-adapter@2.11.2` and set up the split-config pattern for edge compatibility. `src/auth.config.ts` holds the edge-safe slice (GitHub provider — auto-reads `AUTH_GITHUB_ID`/`_SECRET` — plus `jwt`/`session` callbacks that carry `user.id`, no adapter). `src/auth.ts` builds the full Node instance (`PrismaAdapter(prisma)` + `session.strategy: "jwt"`, spreads authConfig) exporting `auth`/`handlers`/`signIn`/`signOut`. `src/app/api/auth/[...nextauth]/route.ts` re-exports `handlers` as `GET`/`POST`. `src/proxy.ts` builds its own adapter-free `NextAuth(authConfig)` (keeps Prisma out of the edge runtime) and uses `export const proxy = auth((req) => …)` to 307-redirect unauthenticated `/dashboard*` visitors to `/api/auth/signin` with a `callbackUrl`; matcher excludes `api`/`_next`/`favicon`. `src/types/next-auth.d.ts` extends `Session.user` + JWT with `id`. DB models (User w/ password + Account/Session/VerificationToken) already existed from the initial migration, so no migration was needed. Documented `AUTH_SECRET`/`AUTH_GITHUB_ID`/`AUTH_GITHUB_SECRET` in `.env.example` (real values already in local `.env`). No custom `pages.signIn` — uses NextAuth's default page. Verified with `pnpm lint` (clean), `pnpm build` (Proxy + auth route registered), and live curl: `/dashboard`→307 to sign-in w/ callbackUrl, `/`→200, `/api/auth/signin`→200, providers endpoint lists GitHub. Interactive GitHub OAuth round-trip left as a manual check (can't drive GitHub's consent screen headless).
+
+- 2026-07-03 — Auth Phase 2 (Email/Password Credentials provider + registration): added a NextAuth Credentials provider via the split-config pattern. `src/auth.config.ts` gains an edge-safe placeholder — `Credentials({ credentials: { email, password }, authorize: () => null })` — so no bcrypt/Prisma is pulled into the edge/proxy runtime; `src/auth.ts` builds the real `credentialsProvider` (Node runtime) that Zod-validates the input, `findUnique`s the user by email, rejects OAuth-only users (no `password`), and `bcrypt.compare`s — returning `null` on any failure to keep errors generic — then swaps it into the config via `authConfig.providers.map(p => typeof p !== "function" && p.id === "credentials" ? credentialsProvider : p)` so GitHub passes through untouched. Added `src/lib/validations/auth.ts` (Zod `signInSchema` + `registerSchema` sharing email/`min(8)` password rules; `registerSchema.refine` enforces `password === confirmPassword`) and the `zod@4.4.3` dependency (per coding standards). Added `POST /api/auth/register` (`src/app/api/auth/register/route.ts`): parses JSON, validates with `registerSchema`, rejects duplicate emails (409), `bcrypt.hash(…, 12)` (matches the seed), creates the user, and returns `{ success, data, error }` with 201/400/409/500 status codes. `User.password` already existed from the initial migration, so no migration was needed. Verified with `pnpm lint` (clean), `pnpm build` (`/api/auth/register` registered), and live curl against the dev server: register 201 / duplicate 409 / password-mismatch 400 / short-password 400; providers endpoint lists **github + credentials**; full CSRF→callback sign-in with the correct password → 302 to `/dashboard` with a session carrying the JWT `id`, wrong password → 302 to `signin?error=CredentialsSignin`. GitHub OAuth unchanged (interactive consent still a manual check). Test left one user (`test+…@test.com`) on the Neon Development branch.
