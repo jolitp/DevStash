@@ -1,20 +1,32 @@
-# Current Feature
+# Current Feature: Auth Phase 3 — Custom Auth UI (Sign In / Register / Sign Out)
 
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-Completed
+In Progress
 
 ## Goals
 
 <!-- Goals & requirements -->
 
+- **Sign In page (`/sign-in`):** email + password fields, a "Sign in with GitHub" button, a link to the register page, plus client-side validation and error display. Point NextAuth's `pages.signIn` here so the split-config default page is replaced.
+- **Register page (`/register`):** name, email, password, confirm-password fields with validation (passwords match, email format); submit to `POST /api/auth/register`; redirect to `/sign-in` on success.
+- **Sidebar footer (user area):** show the user's avatar (GitHub `image`, else initials from name), show the user's name, and an avatar-click dropdown containing "Sign out". Clicking the avatar itself navigates to `/profile`.
+- **Reusable Avatar component:** handles both the `image` case and the initials fallback (e.g. "Brad Traversy" → "BT").
+- Replace the sidebar's mock user data with the real session user (unblocks deferred audit item M3).
 
 ## Notes
 
 <!-- Any extra notes -->
+
+- Custom pages replace NextAuth's built-in ones — set `pages: { signIn: "/sign-in" }` in the auth config; wire the sign-in form to `signIn("credentials", …)` / `signIn("github")` and the sign-out to `signOut()`.
+- Avatar logic: `image` → use it; otherwise derive initials from `name`. Build one reusable component used in both the sidebar footer and anywhere else an avatar is shown.
+- Sidebar footer currently renders mock user data (per Phase 1/audit M3) — swap to the session user here.
+- Validation should reuse the Zod schemas from `src/lib/validations/auth.ts` (`signInSchema` / `registerSchema`) added in Phase 2.
+- New routes referenced but not necessarily built now: `/profile` (avatar click target).
+- Spec: `context/features/013-auth-phase-3-spec.md`
 
 
 ## History
