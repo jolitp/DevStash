@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 import { registerSchema } from "@/lib/validations/auth";
@@ -44,8 +45,11 @@ export function RegisterForm() {
         return;
       }
 
-      // Account created — send them to sign in with a friendly hint.
-      router.push("/sign-in?registered=1");
+      // Account created — tell them they can log in, then send them to sign in.
+      toast.success("Account created", {
+        description: "You can now log in with your email and password.",
+      });
+      router.push("/sign-in");
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
