@@ -1,43 +1,20 @@
-# Current Feature: Auth Setup — NextAuth v5 + GitHub Provider (Auth Phase 1)
+# Current Feature
 
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-In Progress
+Completed
 
 ## Goals
 
 <!-- Goals & requirements -->
 
-- Install NextAuth v5 (`next-auth@beta`) and `@auth/prisma-adapter`.
-- Set up the split auth config pattern for edge compatibility.
-- Add a GitHub OAuth provider.
-- Protect `/dashboard/*` routes using the Next.js 16 proxy.
-- Redirect unauthenticated users to the sign-in page.
-
-### Files to create
-
-- `src/auth.config.ts` — edge-compatible config (providers only, no adapter).
-- `src/auth.ts` — full config with Prisma adapter and JWT strategy.
-- `src/app/api/auth/[...nextauth]/route.ts` — export handlers from `auth.ts`.
-- `src/proxy.ts` — route protection with redirect logic.
-- `src/types/next-auth.d.ts` — extend the `Session` type with `user.id`.
 
 ## Notes
 
 <!-- Any extra notes -->
-
-- Verify newest NextAuth v5 config/conventions with Context7 before writing code.
-- Use `next-auth@beta` (not `@latest`, which installs v4).
-- Proxy file must live at `src/proxy.ts` (same level as `app/`); use a named export: `export const proxy = auth(...)` — not a default export.
-- Use `session: { strategy: "jwt" }` with the split config pattern.
-- Do NOT set a custom `pages.signIn` — use NextAuth's default page for testing.
-- Env vars: `AUTH_SECRET`, `AUTH_GITHUB_ID`, `AUTH_GITHUB_SECRET`.
-- Spec: `context/features/011-auth-phase-1-spec.md`. Siblings `012-auth-phase-2` and `013-auth-phase-3` also exist (this loads Phase 1 only).
-- Testing: visit `/dashboard` → should redirect to sign-in → sign in with GitHub → redirect back to `/dashboard`.
-- References: edge compatibility https://authjs.dev/getting-started/installation#edge-compatibility · Prisma adapter https://authjs.dev/getting-started/adapters/prisma
 
 
 ## History
@@ -65,3 +42,5 @@ In Progress
 - 2026-07-02 — Pro badge on sidebar types: installed the ShadCN `badge` component and added a subtle uppercase **PRO** badge to the File and Image item types in the sidebar (Pro-tier features per the spec). Added a `pro?: boolean` flag to `NavLink` (`sidebar-data.ts`); the dashboard layout flips it on via a `PRO_TYPES` set (`file`/`image`) when mapping item types to nav links; `NavItem` in `Sidebar.tsx` renders a compact `secondary` badge (`h-4`, `text-[10px]`, `tracking-wider`, muted foreground) before the item count, hidden when the desktop rail is collapsed. Verified with `pnpm lint` (clean) and `pnpm build` (dashboard still `ƒ Dynamic`).
 
 - 2026-07-02 — Audit quick wins: low/no-risk cleanups from the code-scanner audit. (1) Consolidated the `icon-name → lucide component` map that was duplicated across `ItemCard.tsx`, `CollectionCard.tsx`, and `Sidebar.tsx` into a single `src/lib/item-type-icons.ts` (`ITEM_TYPE_ICONS`, the union of all three prior key sets); call sites index into the shared map directly rather than a resolver function, since a component returned from a function call during render trips the `react-hooks/static-components` ESLint rule (Record indexing does not). (2) Simplified `getDashboardItems` `referenceNow` to read the newest-first `rows[0]` instead of `reduce`-ing the whole list. (3) Moved the seeded demo password to `SEED_DEMO_PASSWORD` (dev-only, safe `"12345678"` fallback) and documented it in `.env.example`. Deferred M1 (unbounded collection fetches), M3 (sidebar user still on mock data — blocked on auth), L2 (splitting `Sidebar.tsx`), and L3 (`ItemGrid` extraction). Verified with `pnpm lint` (clean) and `pnpm build` (dashboard still `ƒ Dynamic`); confirmed all seed type icons + sidebar library-link icons resolve against the consolidated map.
+
+- 2026-07-03 — Auth Phase 1 (NextAuth v5 + GitHub OAuth): installed `next-auth@5.0.0-beta.31` + `@auth/prisma-adapter@2.11.2` and set up the split-config pattern for edge compatibility. `src/auth.config.ts` holds the edge-safe slice (GitHub provider — auto-reads `AUTH_GITHUB_ID`/`_SECRET` — plus `jwt`/`session` callbacks that carry `user.id`, no adapter). `src/auth.ts` builds the full Node instance (`PrismaAdapter(prisma)` + `session.strategy: "jwt"`, spreads authConfig) exporting `auth`/`handlers`/`signIn`/`signOut`. `src/app/api/auth/[...nextauth]/route.ts` re-exports `handlers` as `GET`/`POST`. `src/proxy.ts` builds its own adapter-free `NextAuth(authConfig)` (keeps Prisma out of the edge runtime) and uses `export const proxy = auth((req) => …)` to 307-redirect unauthenticated `/dashboard*` visitors to `/api/auth/signin` with a `callbackUrl`; matcher excludes `api`/`_next`/`favicon`. `src/types/next-auth.d.ts` extends `Session.user` + JWT with `id`. DB models (User w/ password + Account/Session/VerificationToken) already existed from the initial migration, so no migration was needed. Documented `AUTH_SECRET`/`AUTH_GITHUB_ID`/`AUTH_GITHUB_SECRET` in `.env.example` (real values already in local `.env`). No custom `pages.signIn` — uses NextAuth's default page. Verified with `pnpm lint` (clean), `pnpm build` (Proxy + auth route registered), and live curl: `/dashboard`→307 to sign-in w/ callbackUrl, `/`→200, `/api/auth/signin`→200, providers endpoint lists GitHub. Interactive GitHub OAuth round-trip left as a manual check (can't drive GitHub's consent screen headless).
