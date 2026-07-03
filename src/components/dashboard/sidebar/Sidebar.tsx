@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 
 import { useSidebar } from "./sidebar-context";
 import { libraryLinks, type NavLink } from "./sidebar-data";
+import { SidebarUser, type SidebarUserData } from "./SidebarUser";
 
 /** Hide when the desktop rail is collapsed; always shown in the mobile drawer. */
 const HIDE_ON_COLLAPSE = "group-data-[collapsed=true]/sidebar:lg:hidden";
@@ -91,10 +92,12 @@ function NavItem({ link }: { link: NavLink }) {
 }
 
 export function Sidebar({
+  user,
   typeLinks,
   favoriteCollections,
   recentCollections,
 }: {
+  user: SidebarUserData;
   typeLinks: NavLink[];
   favoriteCollections: NavLink[];
   recentCollections: NavLink[];
@@ -254,32 +257,7 @@ export function Sidebar({
             </div>
           )}
 
-          <div
-            className={cn(
-              "flex items-center gap-3",
-              "group-data-[collapsed=true]/sidebar:lg:justify-center",
-            )}
-          >
-            <span
-              className="flex size-9 shrink-0 items-center justify-center rounded-full text-sm font-medium text-white"
-              style={{ backgroundColor: currentUser.avatarColor }}
-            >
-              {currentUser.initials}
-            </span>
-            <span
-              className={cn(
-                "flex min-w-0 flex-col leading-tight",
-                HIDE_ON_COLLAPSE,
-              )}
-            >
-              <span className="truncate text-sm font-medium">
-                {currentUser.name}
-              </span>
-              <span className="truncate text-xs text-sidebar-foreground/60">
-                {currentUser.email}
-              </span>
-            </span>
-          </div>
+          <SidebarUser user={user} />
         </div>
       </aside>
     </>

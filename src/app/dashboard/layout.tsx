@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { Sidebar } from "@/components/dashboard/sidebar/Sidebar";
 import { SidebarProvider } from "@/components/dashboard/sidebar/sidebar-context";
 import {
@@ -24,10 +25,17 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [itemTypes, collections] = await Promise.all([
+  const [session, itemTypes, collections] = await Promise.all([
+    auth(),
     getSidebarItemTypes(),
     getSidebarCollections(),
   ]);
+
+  const user = {
+    name: session?.user?.name ?? null,
+    email: session?.user?.email ?? null,
+    image: session?.user?.image ?? null,
+  };
 
   const typeLinks: NavLink[] = itemTypes.map((type) => ({
     label: capitalize(type.name),
@@ -58,6 +66,7 @@ export default async function DashboardLayout({
     <SidebarProvider>
       <div className="flex h-dvh">
         <Sidebar
+          user={user}
           typeLinks={typeLinks}
           favoriteCollections={favoriteCollections}
           recentCollections={recentCollections}
