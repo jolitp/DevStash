@@ -1,32 +1,18 @@
-# Current Feature: Auth Phase 3 — Custom Auth UI (Sign In / Register / Sign Out)
-
+# Current Feature
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-In Progress
+Not Started
 
 ## Goals
 
 <!-- Goals & requirements -->
 
-- **Sign In page (`/sign-in`):** email + password fields, a "Sign in with GitHub" button, a link to the register page, plus client-side validation and error display. Point NextAuth's `pages.signIn` here so the split-config default page is replaced.
-- **Register page (`/register`):** name, email, password, confirm-password fields with validation (passwords match, email format); submit to `POST /api/auth/register`; redirect to `/sign-in` on success.
-- **Sidebar footer (user area):** show the user's avatar (GitHub `image`, else initials from name), show the user's name, and an avatar-click dropdown containing "Sign out". Clicking the avatar itself navigates to `/profile`.
-- **Reusable Avatar component:** handles both the `image` case and the initials fallback (e.g. "Brad Traversy" → "BT").
-- Replace the sidebar's mock user data with the real session user (unblocks deferred audit item M3).
-
 ## Notes
 
 <!-- Any extra notes -->
-
-- Custom pages replace NextAuth's built-in ones — set `pages: { signIn: "/sign-in" }` in the auth config; wire the sign-in form to `signIn("credentials", …)` / `signIn("github")` and the sign-out to `signOut()`.
-- Avatar logic: `image` → use it; otherwise derive initials from `name`. Build one reusable component used in both the sidebar footer and anywhere else an avatar is shown.
-- Sidebar footer currently renders mock user data (per Phase 1/audit M3) — swap to the session user here.
-- Validation should reuse the Zod schemas from `src/lib/validations/auth.ts` (`signInSchema` / `registerSchema`) added in Phase 2.
-- New routes referenced but not necessarily built now: `/profile` (avatar click target).
-- Spec: `context/features/013-auth-phase-3-spec.md`
 
 
 ## History
@@ -58,3 +44,5 @@ In Progress
 - 2026-07-03 — Auth Phase 1 (NextAuth v5 + GitHub OAuth): installed `next-auth@5.0.0-beta.31` + `@auth/prisma-adapter@2.11.2` and set up the split-config pattern for edge compatibility. `src/auth.config.ts` holds the edge-safe slice (GitHub provider — auto-reads `AUTH_GITHUB_ID`/`_SECRET` — plus `jwt`/`session` callbacks that carry `user.id`, no adapter). `src/auth.ts` builds the full Node instance (`PrismaAdapter(prisma)` + `session.strategy: "jwt"`, spreads authConfig) exporting `auth`/`handlers`/`signIn`/`signOut`. `src/app/api/auth/[...nextauth]/route.ts` re-exports `handlers` as `GET`/`POST`. `src/proxy.ts` builds its own adapter-free `NextAuth(authConfig)` (keeps Prisma out of the edge runtime) and uses `export const proxy = auth((req) => …)` to 307-redirect unauthenticated `/dashboard*` visitors to `/api/auth/signin` with a `callbackUrl`; matcher excludes `api`/`_next`/`favicon`. `src/types/next-auth.d.ts` extends `Session.user` + JWT with `id`. DB models (User w/ password + Account/Session/VerificationToken) already existed from the initial migration, so no migration was needed. Documented `AUTH_SECRET`/`AUTH_GITHUB_ID`/`AUTH_GITHUB_SECRET` in `.env.example` (real values already in local `.env`). No custom `pages.signIn` — uses NextAuth's default page. Verified with `pnpm lint` (clean), `pnpm build` (Proxy + auth route registered), and live curl: `/dashboard`→307 to sign-in w/ callbackUrl, `/`→200, `/api/auth/signin`→200, providers endpoint lists GitHub. Interactive GitHub OAuth round-trip left as a manual check (can't drive GitHub's consent screen headless).
 
 - 2026-07-03 — Auth Phase 2 (Email/Password Credentials provider + registration): added a NextAuth Credentials provider via the split-config pattern. `src/auth.config.ts` gains an edge-safe placeholder — `Credentials({ credentials: { email, password }, authorize: () => null })` — so no bcrypt/Prisma is pulled into the edge/proxy runtime; `src/auth.ts` builds the real `credentialsProvider` (Node runtime) that Zod-validates the input, `findUnique`s the user by email, rejects OAuth-only users (no `password`), and `bcrypt.compare`s — returning `null` on any failure to keep errors generic — then swaps it into the config via `authConfig.providers.map(p => typeof p !== "function" && p.id === "credentials" ? credentialsProvider : p)` so GitHub passes through untouched. Added `src/lib/validations/auth.ts` (Zod `signInSchema` + `registerSchema` sharing email/`min(8)` password rules; `registerSchema.refine` enforces `password === confirmPassword`) and the `zod@4.4.3` dependency (per coding standards). Added `POST /api/auth/register` (`src/app/api/auth/register/route.ts`): parses JSON, validates with `registerSchema`, rejects duplicate emails (409), `bcrypt.hash(…, 12)` (matches the seed), creates the user, and returns `{ success, data, error }` with 201/400/409/500 status codes. `User.password` already existed from the initial migration, so no migration was needed. Verified with `pnpm lint` (clean), `pnpm build` (`/api/auth/register` registered), and live curl against the dev server: register 201 / duplicate 409 / password-mismatch 400 / short-password 400; providers endpoint lists **github + credentials**; full CSRF→callback sign-in with the correct password → 302 to `/dashboard` with a session carrying the JWT `id`, wrong password → 302 to `signin?error=CredentialsSignin`. GitHub OAuth unchanged (interactive consent still a manual check). Test left one user (`test+…@test.com`) on the Neon Development branch.
+
+- 2026-07-03 — Auth Phase 3 (Custom Auth UI — Sign In / Register / Sign Out): built the custom sign-in/register pages and the sidebar user menu, replacing NextAuth's default page. Added `/sign-in` (`SignInForm.tsx` — `signIn("credentials", …)` with `redirect:false` + client-side `signInSchema` validation and error display, plus a "Sign in with GitHub" `signIn("github")` button), `/register` (`RegisterForm.tsx` — `registerSchema`-validated name/email/password/confirm fields, `POST /api/auth/register`, then auto sign-in; a `sonner` toast confirms success), and `/profile` (session-guarded placeholder, the avatar-click target). Shared `AuthCard.tsx` wraps both auth forms. Set `pages: { signIn: "/sign-in" }` in `auth.config.ts` and updated `proxy.ts` to redirect unauthenticated `/dashboard*` visitors there (was `/api/auth/signin`). Added a reusable `user-avatar.tsx` + `src/lib/avatar.ts` (`image` → use it, else initials from `name`, e.g. "Brad Traversy" → "BT"), consumed by the new `SidebarUser.tsx` — a real-session-user footer (avatar links to `/profile`) with a ShadCN `dropdown-menu` containing "Sign out" (`signOut()`), unblocking deferred audit item **M3** (sidebar no longer on mock user data). GitHub sign-in now links to an existing same-email account (`auth.config.ts` `signIn` callback / `allowDangerousEmailAccountLinking`). Installed ShadCN `dropdown-menu` + `sonner` (Toaster mounted in the root layout) and added `next.config.ts` `images.remotePatterns` for GitHub avatar hosts. Verified with `pnpm build` (all routes registered: `/sign-in`, `/register`, `/profile`; Proxy present). Merged to main via `/feature complete`.
