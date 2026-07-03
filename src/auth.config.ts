@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
+import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
 
 // Edge-compatible slice of the auth configuration: providers + callbacks only,
@@ -7,8 +8,18 @@ import GitHub from "next-auth/providers/github";
 // edge-safe instance in `proxy.ts`.
 //
 // GitHub auto-reads AUTH_GITHUB_ID / AUTH_GITHUB_SECRET from the environment.
+//
+// The Credentials provider here is an edge-safe placeholder: its authorize()
+// always returns null so no bcrypt/Prisma code is pulled into the edge runtime.
+// `auth.ts` replaces it with the real password-checking implementation.
 export default {
-  providers: [GitHub],
+  providers: [
+    GitHub,
+    Credentials({
+      credentials: { email: {}, password: {} },
+      authorize: () => null,
+    }),
+  ],
   callbacks: {
     // Persist the user id onto the JWT at sign-in so it survives without DB reads.
     jwt({ token, user }) {
