@@ -42,3 +42,33 @@ nix develop            # sets PRISMA_SCHEMA_ENGINE_BINARY from flake.nix, then r
 ```
 
 Prisma 7 runs queries through the Neon driver adapter (no native query engine), so only the `schema-engine` is needed — see `flake.nix`.
+
+## Playwright MCP on NixOS
+
+The Playwright MCP can't use its own downloaded browsers on NixOS (generic prebuilt binaries won't run, and its `channel: chrome` default looks for `/opt/google/chrome`). Instead `flake.nix` pins `pkgs.chromium` and exports `PLAYWRIGHT_CHROMIUM_BIN`, which `.mcp.json` passes to the server via `--executable-path`.
+
+Because `.mcp.json` expands `${PLAYWRIGHT_CHROMIUM_BIN}` from the environment, **the editor/CLI must be launched from inside `nix develop`** — otherwise the variable is empty and the browser fails to start. Using the VS Code extension, launch VS Code itself from the dev shell:
+
+```
+nix develop            # then, from that same shell:
+code .                 # (or `codium .`) — inherits PLAYWRIGHT_CHROMIUM_BIN
+```
+
+Reconnect the Playwright MCP server once after launching so it picks up the resolved path. **Always start VS Code this way before using the Playwright MCP.**
+
+## Neon MCP — default target
+
+When using the Neon MCP for this project, ALWAYS default to:
+
+- **Project:** DevStash — `delicate-shadow-52219909`
+- **Branch:** Development — `br-mute-frost-acupp6if`
+
+Rules:
+- Pass `branchId: "br-mute-frost-acupp6if"` on every Neon query/tool call unless
+  I explicitly name a different branch.
+- NEVER run any query — read or write — against the **production** branch
+  (`br-bold-snow-acimgndx`) unless I explicitly say "production" in that request.
+- Approval to use production applies only to the single request where I say so;
+  it does not carry over to later calls.
+- Never run destructive SQL (DROP, DELETE, TRUNCATE, UPDATE/INSERT without my
+  go-ahead), even on Development. Ask first.
