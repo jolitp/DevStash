@@ -8,6 +8,10 @@ import GitHub from "next-auth/providers/github";
 // edge-safe instance in `proxy.ts`.
 //
 // GitHub auto-reads AUTH_GITHUB_ID / AUTH_GITHUB_SECRET from the environment.
+// `allowDangerousEmailAccountLinking` lets a GitHub sign-in attach to an
+// existing account with the same email (e.g. one created with email/password)
+// instead of failing with OAuthAccountNotLinked. Safe here because GitHub only
+// returns verified primary emails, so it can't be used to hijack an account.
 //
 // The Credentials provider here is an edge-safe placeholder: its authorize()
 // always returns null so no bcrypt/Prisma code is pulled into the edge runtime.
@@ -18,7 +22,7 @@ export default {
     signIn: "/sign-in",
   },
   providers: [
-    GitHub,
+    GitHub({ allowDangerousEmailAccountLinking: true }),
     Credentials({
       credentials: { email: {}, password: {} },
       authorize: () => null,
