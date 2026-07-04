@@ -3,6 +3,7 @@ import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { EMAIL_FROM, resend } from "@/lib/email/resend";
 import { verificationEmail } from "@/lib/email/verification-email";
+import { isEmailVerificationEnabled } from "@/lib/auth/email-verification";
 
 // How long a verification link stays valid.
 const TOKEN_TTL_MS = 1000 * 60 * 60 * 24; // 24 hours
@@ -127,6 +128,8 @@ export async function verifyEmailToken(
  * revealing whether the email exists or is already verified (anti-enumeration).
  */
 export async function resendVerificationEmail(email: string, baseUrl: string) {
+  if (!isEmailVerificationEnabled()) return;
+
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user || !user.password || user.emailVerified) return;
 
