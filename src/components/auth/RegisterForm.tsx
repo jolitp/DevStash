@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { toast } from "sonner";
 import { MailCheck } from "lucide-react";
 import { Loader2 } from "lucide-react";
 
@@ -11,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { ResendVerification } from "@/components/auth/ResendVerification";
 
 export function RegisterForm() {
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
@@ -43,15 +47,34 @@ export function RegisterForm() {
 
       if (!res.ok) {
         setError(data.error ?? "Registration failed");
+        setPending(false);
         return;
       }
 
-      // Account created — swap the form for a "check your email" panel. The user
-      // must verify before they can sign in.
-      setRegisteredEmail(parsed.data.email);
+      // Email verification is on — swap the form for a "check your email" panel.
+      // The user must verify before they can sign in.
+      if (data.data?.verificationRequired) {
+        setRegisteredEmail(parsed.data.email);
+        setPending(false);
+        return;
+      }
+
+      // Verification is off — sign the new account in immediately.
+      const result = await signIn("credentials", {
+        email: parsed.data.email,
+        password: parsed.data.password,
+        redirect: false,
+      });
+      if (result?.error) {
+        // Account exists but auto sign-in failed — send them to sign in manually.
+        router.push("/sign-in");
+        return;
+      }
+      toast.success("Account created. Welcome to DevStash!");
+      router.push("/dashboard");
+      router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
-    } finally {
       setPending(false);
     }
   }

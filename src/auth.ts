@@ -5,6 +5,7 @@ import Credentials from "next-auth/providers/credentials";
 
 import authConfig from "@/auth.config";
 import { prisma } from "@/lib/prisma";
+import { isEmailVerificationEnabled } from "@/lib/auth/email-verification";
 import { signInSchema } from "@/lib/validations/auth";
 
 // Thrown when the password is correct but the email hasn't been verified. The
@@ -31,8 +32,11 @@ const credentialsProvider = Credentials({
     const passwordMatches = await bcrypt.compare(password, user.password);
     if (!passwordMatches) return null;
 
-    // Password is correct, but block sign-in until the email is verified.
-    if (!user.emailVerified) throw new EmailNotVerifiedError();
+    // Password is correct, but block sign-in until the email is verified —
+    // unless verification is disabled (e.g. no Resend domain configured).
+    if (isEmailVerificationEnabled() && !user.emailVerified) {
+      throw new EmailNotVerifiedError();
+    }
 
     return {
       id: user.id,
