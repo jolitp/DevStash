@@ -171,3 +171,17 @@ model VerificationToken {
 
   @@id([identifier, token])
 }
+
+// Email-verification links sent on registration (separate from NextAuth's
+// VerificationToken, which is reserved for the Email magic-link provider we
+// don't use). One active token per email — regenerating replaces the old one.
+model EmailVerificationToken {
+  id      String   @id @default(cuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}

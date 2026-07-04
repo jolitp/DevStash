@@ -1,11 +1,18 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
 import authConfig from "@/auth.config";
 import { prisma } from "@/lib/prisma";
 import { signInSchema } from "@/lib/validations/auth";
+
+// Thrown when the password is correct but the email hasn't been verified. The
+// `code` surfaces to the client as `result.code` so the sign-in form can show a
+// "verify your email" message and offer to resend the link.
+class EmailNotVerifiedError extends CredentialsSignin {
+  code = "EmailNotVerified";
+}
 
 // Real Credentials implementation (Node runtime only): validates the shape with
 // Zod, looks the user up by email, and compares the password with bcrypt. Users
@@ -23,6 +30,9 @@ const credentialsProvider = Credentials({
 
     const passwordMatches = await bcrypt.compare(password, user.password);
     if (!passwordMatches) return null;
+
+    // Password is correct, but block sign-in until the email is verified.
+    if (!user.emailVerified) throw new EmailNotVerifiedError();
 
     return {
       id: user.id,

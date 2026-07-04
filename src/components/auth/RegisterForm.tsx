@@ -1,18 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import Link from "next/link";
+import { MailCheck } from "lucide-react";
 import { Loader2 } from "lucide-react";
 
 import { registerSchema } from "@/lib/validations/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ResendVerification } from "@/components/auth/ResendVerification";
 
 export function RegisterForm() {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState<string | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,16 +46,45 @@ export function RegisterForm() {
         return;
       }
 
-      // Account created — tell them they can log in, then send them to sign in.
-      toast.success("Account created", {
-        description: "You can now log in with your email and password.",
-      });
-      router.push("/sign-in");
+      // Account created — swap the form for a "check your email" panel. The user
+      // must verify before they can sign in.
+      setRegisteredEmail(parsed.data.email);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
       setPending(false);
     }
+  }
+
+  if (registeredEmail) {
+    return (
+      <div className="space-y-4 text-center">
+        <div className="flex justify-center">
+          <div className="rounded-full bg-primary/10 p-3">
+            <MailCheck className="size-6 text-primary" />
+          </div>
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm font-medium">Check your email</p>
+          <p className="text-sm text-muted-foreground">
+            We sent a verification link to{" "}
+            <span className="font-medium text-foreground">
+              {registeredEmail}
+            </span>
+            . Click it to activate your account, then sign in.
+          </p>
+        </div>
+        <ResendVerification email={registeredEmail} className="w-full" />
+        <p className="text-sm text-muted-foreground">
+          <Link
+            href="/sign-in"
+            className="font-medium text-foreground underline-offset-4 hover:underline"
+          >
+            Back to sign in
+          </Link>
+        </p>
+      </div>
+    );
   }
 
   return (
