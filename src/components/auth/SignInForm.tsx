@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import { signInSchema } from "@/lib/validations/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ResendVerification } from "@/components/auth/ResendVerification";
 
 /** GitHub mark — lucide dropped brand icons, so inline the logo. */
 function GithubIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -21,12 +22,14 @@ function GithubIcon(props: React.SVGProps<SVGSVGElement>) {
 export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [githubPending, setGithubPending] = useState(false);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setUnverifiedEmail(null);
 
     const formData = new FormData(event.currentTarget);
     const parsed = signInSchema.safeParse({
@@ -46,7 +49,13 @@ export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
     setPending(false);
 
     if (result?.error) {
-      setError("Invalid email or password");
+      // Password was correct but the email isn't verified yet.
+      if (result.code === "EmailNotVerified") {
+        setUnverifiedEmail(parsed.data.email);
+        setError("Please verify your email before signing in.");
+      } else {
+        setError("Invalid email or password");
+      }
       return;
     }
 
@@ -113,6 +122,10 @@ export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
           <p role="alert" className="text-sm text-destructive">
             {error}
           </p>
+        )}
+
+        {unverifiedEmail && (
+          <ResendVerification email={unverifiedEmail} className="w-full" />
         )}
 
         <Button type="submit" className="w-full" disabled={pending}>

@@ -1,18 +1,33 @@
-# Current Feature
+# Current Feature: Email Verification on Register
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-Not Started
+In Progress
 
 ## Goals
 
 <!-- Goals & requirements -->
 
+- On email/password registration, generate a verification token and email the user a clickable verification link (via Resend).
+- Provide a verification endpoint/page that validates the token, marks the user's email as verified (`User.emailVerified`), and redirects to a confirmation/sign-in state.
+- Block credentials sign-in for users whose email is not yet verified, with a clear, user-friendly message.
+- Handle token expiry and invalid/used tokens gracefully.
+- Allow a "resend verification email" path for unverified users.
+- GitHub OAuth users are considered verified by the provider — do not gate them behind email verification.
+
 ## Notes
 
 <!-- Any extra notes -->
+
+- **Provider:** Resend. `RESEND_API_KEY` is already present in `.env` — document it in `.env.example`.
+- **Docs first:** Fetch current Resend (Node SDK / Next.js) and NextAuth v5 docs before implementing; check `node_modules/next/dist/docs/` for Next.js 16 route conventions. Resend is the library we must read up on.
+- **Schema:** The `VerificationToken` NextAuth model and `User.emailVerified` already exist from migration `20260702120514_init` — reuse them if suitable, or add a purpose-built token model via a Prisma migration (`pnpm db:migrate`, run inside `nix develop` on NixOS).
+- **Registration flow:** Ties into `POST /api/auth/register` (Auth Phase 2) and `RegisterForm.tsx` / auto sign-in (Auth Phase 3) — after registering, the user should be told to check their email rather than being signed straight in.
+- **Sign-in gate:** The credentials `authorize` in `src/auth.ts` must reject unverified users (keep the error generic per existing pattern, but surface a distinct "verify your email" message where appropriate).
+- **Env:** May need an app base URL (e.g. `AUTH_URL`/`NEXTAUTH_URL` or a `NEXT_PUBLIC_APP_URL`) to build absolute verification links; a sender/`from` address for Resend.
+- Follow the standard workflow: branch `feature/email-verification`, verify with `pnpm lint` + `pnpm build` (and a live flow check) before commit.
 
 
 ## History
