@@ -26,3 +26,18 @@ export const registerSchema = z
   });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
+
+// Used by POST /api/auth/forgot-password (request a reset link).
+export const requestResetSchema = z.object({ email });
+
+// Used by the reset page form + POST /api/auth/reset-password (the token is
+// validated separately from the request body).
+export const resetPasswordSchema = z
+  .object({
+    password,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
