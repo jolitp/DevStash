@@ -23,6 +23,7 @@ import { fileExtension, formatFileSize, formatRelativeTime } from "@/lib/format"
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 import { cn } from "@/lib/utils";
 
+import { ItemEditForm } from "./ItemEditForm";
 import { useItemDrawer } from "./item-drawer-context";
 
 /** The raw text the Copy button puts on the clipboard for an item. */
@@ -144,8 +145,12 @@ interface FetchResult {
 export function ItemDrawer() {
   const { item, open, setOpen } = useItemDrawer();
   const [result, setResult] = useState<FetchResult | null>(null);
+  // Which item is being edited; `editing` derives from this so switching items
+  // (itemId changes) automatically leaves edit mode without an effect.
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const itemId = item?.id;
+  const editing = itemId != null && editingId === itemId;
 
   useEffect(() => {
     if (!open || !itemId) return;
@@ -184,16 +189,34 @@ export function ItemDrawer() {
   const detail = current?.detail ?? null;
   const error = current?.error ?? null;
 
+  // Refresh the drawer in place with the saved detail, then return to view mode.
+  function handleSaved(updated: ItemDetail) {
+    setResult({
+      id: updated.id,
+      detail: updated,
+      error: null,
+      fetchedAt: Date.now(),
+    });
+    setEditingId(null);
+  }
+
   const type = item?.type;
   const color = type?.color ?? undefined;
   const TypeIcon = type?.icon ? ITEM_TYPE_ICONS[type.icon] : undefined;
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) setEditingId(null);
+        setOpen(next);
+      }}
+    >
       <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-lg">
         {item && (
           <>
-            {/* Header — rendered instantly from the clicked card. */}
+            {/* Header — renders instantly from the clicked card, then prefers
+                the fetched/refreshed detail so edits show up here too. */}
             <div className="border-b border-border px-6 pt-6 pb-4 pr-14">
               {type && (
                 <span
@@ -208,10 +231,12 @@ export function ItemDrawer() {
                   {type.name}
                 </span>
               )}
-              <SheetTitle className="mt-3">{item.title}</SheetTitle>
-              {item.description ? (
+              <SheetTitle className="mt-3">
+                {detail?.title ?? item.title}
+              </SheetTitle>
+              {(detail ? detail.description : item.description) ? (
                 <SheetDescription className="mt-1">
-                  {item.description}
+                  {detail ? detail.description : item.description}
                 </SheetDescription>
               ) : (
                 <SheetDescription className="sr-only">
@@ -226,6 +251,12 @@ export function ItemDrawer() {
                 <p className="text-sm text-destructive">{error}</p>
               ) : !detail ? (
                 <DrawerSkeleton />
+              ) : editing ? (
+                <ItemEditForm
+                  detail={detail}
+                  onCancel={() => setEditingId(null)}
+                  onSaved={handleSaved}
+                />
               ) : (
                 <div className="space-y-6">
                   {/* Metadata */}
@@ -307,21 +338,24 @@ export function ItemDrawer() {
               )}
             </div>
 
-            {/* Footer actions */}
-            <div className="flex items-center gap-2 border-t border-border px-6 py-4">
-              <Button variant="destructive" size="sm" disabled={!detail}>
-                <Trash2 />
-                Delete
-              </Button>
-              <Button
-                size="sm"
-                className="ml-auto"
-                disabled={!detail}
-              >
-                <Pencil />
-                Edit item
-              </Button>
-            </div>
+            {/* Footer actions — hidden in edit mode (Save/Cancel live inline). */}
+            {!editing && (
+              <div className="flex items-center gap-2 border-t border-border px-6 py-4">
+                <Button variant="destructive" size="sm" disabled={!detail}>
+                  <Trash2 />
+                  Delete
+                </Button>
+                <Button
+                  size="sm"
+                  className="ml-auto"
+                  disabled={!detail}
+                  onClick={() => setEditingId(itemId ?? null)}
+                >
+                  <Pencil />
+                  Edit item
+                </Button>
+              </div>
+            )}
           </>
         )}
       </SheetContent>
