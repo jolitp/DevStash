@@ -1,18 +1,39 @@
-# Current Feature
+# Current Feature: Item Drawer — Edit Mode
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-Not Started
+In Progress
 
 ## Goals
 
 <!-- Goals & requirements -->
 
+- Clicking the Edit (pencil) button in the item drawer switches the same drawer from view mode to **edit mode inline** — no separate page, no re-mount.
+- In edit mode, the action bar (Copy/Favorite/Pin) is replaced with **Save** and **Cancel** buttons.
+  - **Cancel** discards changes and returns to view mode.
+  - **Save** persists via a server action, returns to view mode, refreshes the drawer data, and shows a success/error toast.
+- **Editable fields (all types):** Title (text, required), Description (textarea, optional), Tags (comma-separated input → tag array on save).
+- **Type-specific editable fields:**
+  - **Content** (textarea) — snippet, prompt, command, note.
+  - **Language** (text) — snippet, command.
+  - **URL** (text) — link.
+- **Non-editable / display-only in edit mode:** item type, collections (managed separately), created/updated dates.
+- **Validation (Zod, server-side source of truth):** `title` non-empty trimmed string; `description`/`content`/`language` optional string|null; `url` valid URL string|null; `tags` array of trimmed non-empty strings. Return Zod errors in the `{ success: false, error }` response.
+- **Server action:** `updateItem(itemId, data)` in `src/actions/items.ts` — `{ success, data, error }` pattern; Zod-validate, `auth()` session, ownership check, then call the query function.
+- **Data layer:** `updateItem` query in `src/lib/db/items.ts` — tags: disconnect all existing, connect-or-create new; returns the updated `ItemDetail` so the drawer refreshes without a second fetch.
+
 ## Notes
 
 <!-- Any extra notes -->
+
+- Keep it simple — **no form library**; controlled inputs with local state.
+- Client-side: disable **Save** when title is empty (basic UX guard); server-side Zod is the real gate.
+- Content textarea is a plain textarea — **not** a code editor (that comes later).
+- After save, call `router.refresh()` so the underlying card list reflects changes.
+- First feature to introduce `src/actions/` — the app has used API routes + server components so far. This server action becomes a unit-test surface (`src/actions/*`) per the testing scope.
+- Ownership check is new territory: current drawer read path (`getItemDetail`, `GET /api/items/[id]`) is intentionally **unscoped** so all users see demo items. Edit is a mutation — confirm the ownership approach for `updateItem` before implementing (demo items are owned by the demo user; a non-owner editing them may need consideration).
 
 
 ## History

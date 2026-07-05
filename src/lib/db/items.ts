@@ -175,3 +175,61 @@ export async function getItemDetail(id: string): Promise<ItemDetail | null> {
     createdAt: row.createdAt.toISOString(),
   };
 }
+
+/** Editable item fields written by the drawer's edit mode. */
+export interface UpdateItemData {
+  title: string;
+  description: string | null;
+  content: string | null;
+  language: string | null;
+  url: string | null;
+  /** Trimmed, de-duplicated tag names (validated upstream). */
+  tags: string[];
+}
+
+/**
+ * Update an item's editable fields and replace its tags. Ownership must be
+ * checked by the caller (the server action) before this runs; `ownerId` is the
+ * item owner and scopes the (per-user) tag connect-or-create.
+ *
+ * Tags are reset by dropping every existing ItemTag join and re-creating the
+ * new set in one transaction (delete-then-create order avoids PK clashes). Tag
+ * rows themselves are never deleted here — only the joins. Returns the refreshed
+ * `ItemDetail` so the drawer can update without a second round-trip.
+ */
+export async function updateItem(
+  id: string,
+  ownerId: string,
+  data: UpdateItemData,
+): Promise<ItemDetail> {
+  await prisma.$transaction([
+    prisma.itemTag.deleteMany({ where: { itemId: id } }),
+    prisma.item.update({
+      where: { id },
+      data: {
+        title: data.title,
+        description: data.description,
+        content: data.content,
+        language: data.language,
+        url: data.url,
+        tags: {
+          create: data.tags.map((name) => ({
+            tag: {
+              connectOrCreate: {
+                where: { userId_name: { userId: ownerId, name } },
+                create: { name, userId: ownerId },
+              },
+            },
+          })),
+        },
+      },
+    }),
+  ]);
+
+  // The row was just updated in the transaction above, so it exists.
+  const detail = await getItemDetail(id);
+  if (!detail) {
+    throw new Error(`Item ${id} vanished immediately after update`);
+  }
+  return detail;
+}
