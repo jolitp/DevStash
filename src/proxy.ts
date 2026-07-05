@@ -8,7 +8,7 @@ import authConfig from "@/auth.config";
 const { auth } = NextAuth(authConfig);
 
 // Routes that require an authenticated user.
-const PROTECTED_PREFIXES = ["/dashboard", "/profile"];
+const PROTECTED_PREFIXES = ["/dashboard", "/profile", "/items"];
 
 export const proxy = auth((req) => {
   const { nextUrl } = req;

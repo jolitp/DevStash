@@ -16,11 +16,12 @@ export const dynamic = "force-dynamic";
 const PRO_TYPES = new Set(["file", "image"]);
 
 /**
- * Dashboard shell: a full-height collapsible sidebar on the left, with the top
- * bar and main workspace stacked to its right. The sidebar becomes an
- * off-canvas drawer on mobile. Types and collections come from the database.
+ * App shell shared by the dashboard and item pages: a full-height collapsible
+ * sidebar on the left, with the top bar and main workspace stacked to its
+ * right. The sidebar becomes an off-canvas drawer on mobile. Types and
+ * collections come from the database.
  */
-export default async function DashboardLayout({
+export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
