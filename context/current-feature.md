@@ -1,26 +1,18 @@
-# Current Feature: Item Listing 3-Column Grid
+# Current Feature
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-In Progress
+Not Started
 
 ## Goals
 
 <!-- Goals & requirements -->
 
-- Change the `/items/[type]` listing grid from 2 columns to **3 columns on larger screens**.
-- Keep it **fully responsive** — single column on mobile, scaling up gracefully.
-
 ## Notes
 
 <!-- Any extra notes -->
-
-- Target: the item grid in `src/app/(app)/items/[type]/page.tsx` (currently `md:grid-cols-2`).
-- Responsive ladder: `grid-cols-1 md:grid-cols-2 lg:grid-cols-3` — 1 col mobile, 2 cols medium (`md`), 3 cols large (`lg`).
-- CSS-only change (Tailwind v4 utility classes) — no data/logic changes. `ItemCard` unchanged.
-- The dashboard's own item grids are a separate surface; leave them as-is unless asked.
 
 
 ## History
@@ -70,3 +62,5 @@ In Progress
 - 2026-07-04 — Items List View (`/items/[type]`): added a dynamic type-filtered items page. New `src/app/(app)/items/[type]/page.tsx` (`force-dynamic`) awaits `params`, `decodeURIComponent`s the `[type]` segment, and calls the new `getItemsByType()` in `src/lib/db/items.ts` — a case-insensitive `itemType.findFirst` (`name` `mode: "insensitive"`) then a newest-first `item.findMany({ where: { typeId } })` reusing the existing `ITEM_SELECT`/`toDashboardItem` shape + a shared `referenceNow`; returns `null` for unknown types so the page calls `notFound()` (404). The page renders a header (type icon/accent color via the shared `ITEM_TYPE_ICONS` map + `capitalize`d name + "N item(s)" count) and a responsive **two-column grid (`md:grid-cols-2`)** of the existing `ItemCard` (type-colored left border comes for free), plus a dashed empty-state for zero-count types. **Shell (user chose the route-group option):** moved `/dashboard` into a new `(app)` route group and hoisted its layout to `src/app/(app)/layout.tsx` (renamed `DashboardLayout`→`AppLayout`) so `/dashboard` and `/items/*` share the sidebar + top bar with no duplication — URLs unchanged (route groups don't affect paths; `@/`-aliased imports unaffected). Added `/items` to `PROTECTED_PREFIXES` in `src/proxy.ts` so item pages are auth-gated like the dashboard. The `[type]` segment matches the sidebar's `/items/${type.name}` links, which use the DB `ItemType.name` (`snippet`/`prompt`/`note`/`command`/`file`/`image`/**`link`** — note it's `link`, not `url`, per the seed). Verified with `pnpm lint` (clean), `pnpm build` (`/items/[type]` registered `ƒ Dynamic`, `/dashboard` intact, Proxy present), and a live curl flow (demo user) against the Neon **Development** branch: unauth `/items/snippet`→307 to `/sign-in` w/ callbackUrl; authed `/items/snippet`→200 (header "Snippet · 4 items", 4 cards w/ `#3b82f6` left borders, `md:grid-cols-2`); all 7 real types→200; zero-count types (note/image/file)→empty state; unknown types (`nonexistent`, `url`)→404; case-insensitive (`/items/Snippet`)→200.
 
 - 2026-07-04 — Vitest setup (server actions + utilities): added **Vitest 4** (`pnpm test` / `pnpm test:watch`) for unit testing, deliberately scoped to **server actions and `src/lib` utilities — not React components** (Node environment, no jsdom / React Testing Library). `vitest.config.ts` uses `environment: "node"`, native `resolve.tsconfigPaths` for the `@/*` alias (Vitest 4 supports this without the `vite-tsconfig-paths` plugin, which was installed then removed), `globals` **off** (tests `import { describe, it, expect } from "vitest"` explicitly — avoids widening tsconfig `types`, which would disable the app-wide auto-included `@types/node`/React types), and `include: ["src/**/*.test.ts"]`. Starter suite (27 tests, colocated `*.test.ts`): `format.test.ts` (`formatRelativeTime`/`fileExtension`/`formatFileSize`), `avatar.test.ts` (`getInitials`/`avatarColor`), `validations/auth.test.ts` (all 5 Zod schemas incl. refine paths), `auth/email-verification.test.ts` (`isEmailVerificationEnabled` env matrix). Docs: folded testing into the workflow in `context/ai-interaction.md` (step 4 now runs `pnpm test` + `pnpm build`; new **Testing** section defining scope) and updated `CLAUDE.md` (replaced "No test framework is configured" with the `pnpm test` commands + scope note); added a `test` action to the `feature` skill (`SKILL.md`). DB-backed selectors (`src/lib/db/*`) and Prisma-touching auth logic deferred — they need Prisma mocking; there's no `src/actions/` dir yet (app uses API routes + server components), so utilities are the current test surface. Verified with `pnpm test` (27/27 pass), `pnpm lint` (clean), and `pnpm build` (all routes intact; test files type-check as part of the build).
+
+- 2026-07-04 — Item Listing 3-Column Grid: made the `/items/[type]` listing grid responsive with a 3-column max — changed the grid in `src/app/(app)/items/[type]/page.tsx` from `grid gap-4 md:grid-cols-2` to `grid gap-4 md:grid-cols-2 lg:grid-cols-3` (1 column on mobile, 2 at `md` ≥768px, 3 at `lg` ≥1024px). CSS-only change (one Tailwind v4 class) — no data/logic changes, `ItemCard` untouched, dashboard grids left as-is. Verified with `pnpm lint` (clean), `pnpm test` (27/27 pass — unaffected), and `pnpm build` (`/items/[type]` still `ƒ Dynamic`).
