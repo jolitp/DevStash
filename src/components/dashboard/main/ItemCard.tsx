@@ -1,5 +1,8 @@
+"use client";
+
 import { Pin, Star } from "lucide-react";
 
+import { useItemDrawer } from "@/components/dashboard/item-drawer/item-drawer-context";
 import type { DashboardItem } from "@/lib/db/items";
 import { fileExtension, formatFileSize, formatRelativeTime } from "@/lib/format";
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
@@ -34,13 +37,23 @@ export function ItemCard({
   item: DashboardItem;
   referenceNow: number;
 }) {
+  const { openItem } = useItemDrawer();
   const { type } = item;
   const color = type.color ?? undefined;
   const TypeIcon = type.icon ? ITEM_TYPE_ICONS[type.icon] : undefined;
 
   return (
     <article
-      className="flex flex-col rounded-xl border border-border border-l-4 bg-card p-4 transition-colors hover:bg-muted/30"
+      role="button"
+      tabIndex={0}
+      onClick={() => openItem(item)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openItem(item);
+        }
+      }}
+      className="flex cursor-pointer flex-col rounded-xl border border-border border-l-4 bg-card p-4 transition-colors hover:bg-muted/30 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       style={color ? { borderLeftColor: color } : undefined}
     >
       <div className="flex items-center gap-2">

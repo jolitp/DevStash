@@ -135,3 +135,43 @@ export async function getItemsByType(
 
   return { type, items, referenceNow };
 }
+
+/** Full item detail for the drawer view, beyond what the cards already carry. */
+export interface ItemDetail extends DashboardItem {
+  /** Owning collection, if any. */
+  collection: { id: string; name: string } | null;
+  /** File URL for uploaded items (from ItemType file uploads). */
+  fileUrl: string | null;
+  /** ISO timestamp the item was created. */
+  createdAt: string;
+}
+
+const ITEM_DETAIL_SELECT = {
+  ...ITEM_SELECT,
+  fileUrl: true,
+  createdAt: true,
+  collection: { select: { id: true, name: true } },
+} as const;
+
+/**
+ * A single item's full detail for the drawer. Runs unscoped to match the
+ * dashboard/list selectors above (single seeded user until auth-scoping lands);
+ * the API route still requires a session. Add a `userId` filter here in lockstep
+ * with those selectors once items are scoped per user. Returns `null` when no
+ * such item exists so callers can render a 404.
+ */
+export async function getItemDetail(id: string): Promise<ItemDetail | null> {
+  const row = await prisma.item.findUnique({
+    where: { id },
+    select: ITEM_DETAIL_SELECT,
+  });
+
+  if (!row) return null;
+
+  return {
+    ...toDashboardItem(row),
+    collection: row.collection,
+    fileUrl: row.fileUrl,
+    createdAt: row.createdAt.toISOString(),
+  };
+}

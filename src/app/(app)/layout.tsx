@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { ItemDrawerProvider } from "@/components/dashboard/item-drawer/item-drawer-context";
 import { Sidebar } from "@/components/dashboard/sidebar/Sidebar";
 import { SidebarProvider } from "@/components/dashboard/sidebar/sidebar-context";
 import {
@@ -74,7 +75,9 @@ export default async function AppLayout({
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <TopBar />
-          <main className="min-w-0 flex-1 overflow-auto p-6">{children}</main>
+          <main className="min-w-0 flex-1 overflow-auto p-6">
+            <ItemDrawerProvider>{children}</ItemDrawerProvider>
+          </main>
         </div>
       </div>
     </SidebarProvider>
