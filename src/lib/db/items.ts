@@ -98,3 +98,40 @@ export async function getDashboardItems(
     referenceNow,
   };
 }
+
+/** All items of one type, plus that type for the page header. */
+export interface ItemsByType {
+  type: DashboardItemType;
+  items: DashboardItem[];
+  /** epoch ms of the latest item, so relative times stay stable per render */
+  referenceNow: number;
+}
+
+/**
+ * Items belonging to a single type, newest first, for the `/items/[type]` page.
+ * `typeName` is the lowercase `ItemType.name` from the route (e.g. "snippet");
+ * matched case-insensitively. Returns `null` when no such type exists so the
+ * page can render a 404.
+ */
+export async function getItemsByType(
+  typeName: string,
+): Promise<ItemsByType | null> {
+  const type = await prisma.itemType.findFirst({
+    where: { name: { equals: typeName, mode: "insensitive" } },
+    select: { id: true, name: true, icon: true, color: true },
+  });
+
+  if (!type) return null;
+
+  const rows = await prisma.item.findMany({
+    where: { typeId: type.id },
+    orderBy: { updatedAt: "desc" },
+    select: ITEM_SELECT,
+  });
+
+  const items = rows.map(toDashboardItem);
+  // Rows are ordered newest-first, so the first item carries the latest time.
+  const referenceNow = items[0] ? Date.parse(items[0].updatedAt) : Date.now();
+
+  return { type, items, referenceNow };
+}
