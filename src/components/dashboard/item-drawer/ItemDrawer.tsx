@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check, Copy, FolderOpen, Pencil, Pin, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { CodeEditor } from "@/components/ui/code-editor";
 import {
   Sheet,
   SheetContent,
@@ -19,6 +20,9 @@ import { cn } from "@/lib/utils";
 import { DeleteItemButton } from "./DeleteItemButton";
 import { ItemEditForm } from "./ItemEditForm";
 import { useItemDrawer } from "./item-drawer-context";
+
+// Item types whose content is code — rendered with the Monaco editor.
+const CODE_TYPES = new Set(["snippet", "command"]);
 
 /** The raw text the Copy button puts on the clipboard for an item. */
 function copyableText(detail: ItemDetail): string {
@@ -90,6 +94,13 @@ function DetailContent({ detail }: { detail: ItemDetail }) {
   }
 
   if (detail.content) {
+    // Code types (snippet/command) render in a readonly Monaco editor; prose
+    // types (prompt/note) stay in a plain preformatted block.
+    if (CODE_TYPES.has(detail.type.name.toLowerCase())) {
+      return (
+        <CodeEditor value={detail.content} language={detail.language} readOnly />
+      );
+    }
     return (
       <pre className="overflow-x-auto rounded-md border border-border bg-muted/50 px-3 py-2 font-mono text-xs whitespace-pre-wrap text-foreground/90">
         {detail.content}
