@@ -1,16 +1,37 @@
-# Current Feature
+# Current Feature: Item Create
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
+In Progress
+
 ## Goals
 
 <!-- Goals & requirements -->
 
+- Add new items via a **modal dialog** (shadcn `Dialog`), opened from the "New Item" button in the top bar.
+- **Type selector** for: snippet, prompt, command, note, link.
+- Show fields conditionally based on the selected type:
+  - All types: `title` (required), `description`, `tags`.
+  - snippet / command: `content`, `language`.
+  - prompt / note: `content`.
+  - link: `url` (required).
+- Add a `createItem` **server action** with **Zod validation** (following the existing `updateItem`/`deleteItem` pattern: `"use server"`, `{ success, data, error }`, session-guarded).
+- Add a `createItem` **query function** in `src/lib/db/items.ts`.
+- On success: **toast**, close the modal, and **refresh** the list.
+
 ## Notes
 
 <!-- Any extra notes -->
+
+- **Spec:** `context/features/019-item-create-spec.md`.
+- **Pattern to mirror:** `updateItem` in `src/actions/items.ts` + its db layer in `src/lib/db/items.ts`, and the `updateItemSchema` in `src/lib/validations/items.ts` (add a sibling `createItemSchema`). The create action owns the new item, so `userId` comes from the session — no ownership check needed (unlike update/delete).
+- **Type → typeId:** the type selector offers names (`snippet`/`prompt`/`command`/`note`/`link`); resolve to `ItemType.id` in the db layer (case-insensitive `findFirst` like `getItemsByType`). Note it's **`link`**, not `url`, per the seed. File/Image types are Pro-only and intentionally excluded from the create dialog.
+- **Tags:** reuse the per-owner `connectOrCreate` (`userId_name`) approach from `updateItem`'s db layer.
+- **UI home:** the "New Item" button lives in the top bar (currently display-only) — wire it to open the dialog. Reuse the existing shadcn setup; install the `dialog` component only if not already present.
+- **Tests:** add unit tests for `createItemSchema` and the `createItem` action guards (mirroring `items.test.ts`).
+- **Testing note:** creating items writes to the DB — prefer the Neon **Development** branch and clean up throwaway items, mindful of the seeded demo data.
 
 ## History
 

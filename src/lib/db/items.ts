@@ -234,6 +234,71 @@ export async function updateItem(
   return detail;
 }
 
+/** Fields for creating a new item from the "New Item" dialog. */
+export interface CreateItemData {
+  /** Item type name (e.g. "snippet"); resolved to a typeId here. */
+  type: string;
+  title: string;
+  description: string | null;
+  content: string | null;
+  language: string | null;
+  url: string | null;
+  /** Trimmed, de-duplicated tag names (validated upstream). */
+  tags: string[];
+}
+
+/**
+ * Create an item owned by `ownerId`. The `type` name is resolved to an
+ * `ItemType` (case-insensitive, like `getItemsByType`) — throws if unknown so
+ * the action returns a generic error. Tags use the same per-owner
+ * `connectOrCreate` as `updateItem`. Only text-based types reach here (File/Image
+ * are excluded from the dialog), so `contentType` is always "text". Returns the
+ * new item's `ItemDetail` so the caller can open the drawer without a refetch.
+ */
+export async function createItem(
+  ownerId: string,
+  data: CreateItemData,
+): Promise<ItemDetail> {
+  const type = await prisma.itemType.findFirst({
+    where: { name: { equals: data.type, mode: "insensitive" } },
+    select: { id: true },
+  });
+  if (!type) {
+    throw new Error(`Unknown item type: ${data.type}`);
+  }
+
+  const created = await prisma.item.create({
+    data: {
+      title: data.title,
+      description: data.description,
+      content: data.content,
+      language: data.language,
+      url: data.url,
+      contentType: "text",
+      user: { connect: { id: ownerId } },
+      type: { connect: { id: type.id } },
+      tags: {
+        create: data.tags.map((name) => ({
+          tag: {
+            connectOrCreate: {
+              where: { userId_name: { userId: ownerId, name } },
+              create: { name, userId: ownerId },
+            },
+          },
+        })),
+      },
+    },
+    select: { id: true },
+  });
+
+  // The row was just created above, so it exists.
+  const detail = await getItemDetail(created.id);
+  if (!detail) {
+    throw new Error(`Item ${created.id} vanished immediately after create`);
+  }
+  return detail;
+}
+
 /**
  * Delete an item and its tag joins. Ownership must be checked by the caller (the
  * server action) before this runs. Removes the item's `ItemTag` joins first,

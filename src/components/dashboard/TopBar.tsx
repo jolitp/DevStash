@@ -1,7 +1,7 @@
-import { Plus, Search } from "lucide-react";
+import { Search } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NewItemDialog } from "@/components/dashboard/NewItemDialog";
 import { SidebarTrigger } from "@/components/dashboard/sidebar/SidebarTrigger";
 
 /**
@@ -27,10 +27,7 @@ export function TopBar() {
         </kbd>
       </div>
 
-      <Button className="shrink-0">
-        <Plus />
-        New Item
-      </Button>
+      <NewItemDialog />
     </header>
   );
 }
