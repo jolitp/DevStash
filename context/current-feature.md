@@ -1,18 +1,32 @@
-# Current Feature
+# Current Feature: Delete Item
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-Not Started
+In Progress
 
 ## Goals
 
 <!-- Goals & requirements -->
 
+- Wire up the existing (currently no-op) **Delete** button in the item drawer footer so it deletes the item.
+- Show a **shadcn AlertDialog confirmation** before deleting (destructive action — no accidental deletes).
+- On success: show a **sonner toast**, close the drawer, and refresh the list so the deleted card disappears.
+- Add a `deleteItem(itemId)` server action following the existing `updateItem` pattern (`"use server"`, `{ success, data, error }`, session-guarded, **owner-scoped** ownership check before writing).
+- Add a `deleteItem(id, ownerId)` data-layer function in `src/lib/db/items.ts` that removes the item's `ItemTag` joins then the item, in FK-safe order inside a `$transaction` (Tag rows are left in place, matching the update pattern).
+- Add a unit test for the `deleteItem` server action's guards where testable (mirroring the items validation/action test approach).
+
 ## Notes
 
 <!-- Any extra notes -->
+
+- **Existing groundwork:** the drawer footer already has a `<Button variant="destructive">Delete</Button>` (`ItemDrawer.tsx:344`) that is disabled until detail loads but has no handler yet.
+- **Reuse the existing shadcn `alert-dialog`** component (already installed for `DeleteAccountDialog.tsx` in the profile page) — don't reinstall.
+- **Pattern to mirror:** `updateItem` in `src/actions/items.ts` (auth → ownership check → db call → `{success,data,error}`) and its db layer in `src/lib/db/items.ts`. Keep the read path unscoped but the mutation owner-scoped, exactly like update.
+- **Ownership caveat (same as edit):** because the read/list path is intentionally unscoped, a non-owner (e.g. `jolitp@gmail.com`) sees the demo user's seeded items but cannot delete them — the action returns "You do not have access to this item". To delete seeded items, sign in as `demo@devstash.io`.
+- After delete, call `router.refresh()` (list reflects removal) and close the drawer via the existing `setOpen(false)` from `useItemDrawer()`.
+- **Testing note:** be careful not to delete real seeded demo data during Playwright verification — create a throwaway item first, or delete-and-reseed. Prefer the Neon **Development** branch only.
 
 
 ## History
