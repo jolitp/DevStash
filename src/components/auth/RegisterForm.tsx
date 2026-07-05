@@ -46,7 +46,9 @@ export function RegisterForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error ?? "Registration failed");
+        const message = data.error ?? "Registration failed";
+        setError(message);
+        if (res.status === 429) toast.error(message);
         setPending(false);
         return;
       }

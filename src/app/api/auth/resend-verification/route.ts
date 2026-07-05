@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getBaseUrl, resendVerificationEmail } from "@/lib/auth/verification";
+import {
+  checkRateLimit,
+  getClientIp,
+  tooManyRequestsResponse,
+} from "@/lib/rate-limit";
 
 const resendSchema = z.object({ email: z.email() });
 
@@ -26,6 +31,13 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+
+  // Throttle per IP + email so a single address can't be email-bombed.
+  const { success, reset } = await checkRateLimit(
+    "resendVerification",
+    `${getClientIp(request)}:${parsed.data.email}`,
+  );
+  if (!success) return tooManyRequestsResponse(reset);
 
   try {
     await resendVerificationEmail(parsed.data.email, getBaseUrl(request.url));

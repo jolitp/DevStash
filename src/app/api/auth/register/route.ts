@@ -5,10 +5,22 @@ import { prisma } from "@/lib/prisma";
 import { getBaseUrl, sendVerificationEmail } from "@/lib/auth/verification";
 import { isEmailVerificationEnabled } from "@/lib/auth/email-verification";
 import { registerSchema } from "@/lib/validations/auth";
+import {
+  checkRateLimit,
+  getClientIp,
+  tooManyRequestsResponse,
+} from "@/lib/rate-limit";
 
 // POST /api/auth/register — create an email/password account.
 // Body: { name, email, password, confirmPassword }
 export async function POST(request: Request) {
+  // Throttle account creation per IP to curb automated sign-up abuse.
+  const { success, reset } = await checkRateLimit(
+    "register",
+    getClientIp(request),
+  );
+  if (!success) return tooManyRequestsResponse(reset);
+
   let body: unknown;
   try {
     body = await request.json();
