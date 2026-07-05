@@ -1,18 +1,26 @@
-# Current Feature
+# Current Feature: Item Listing 3-Column Grid
 
 ## Status
 
 <!-- Not Started|In Progress|Completed -->
 
-Not Started
+In Progress
 
 ## Goals
 
 <!-- Goals & requirements -->
 
+- Change the `/items/[type]` listing grid from 2 columns to **3 columns on larger screens**.
+- Keep it **fully responsive** — single column on mobile, scaling up gracefully.
+
 ## Notes
 
 <!-- Any extra notes -->
+
+- Target: the item grid in `src/app/(app)/items/[type]/page.tsx` (currently `md:grid-cols-2`).
+- Responsive ladder: `grid-cols-1 md:grid-cols-2 lg:grid-cols-3` — 1 col mobile, 2 cols medium (`md`), 3 cols large (`lg`).
+- CSS-only change (Tailwind v4 utility classes) — no data/logic changes. `ItemCard` unchanged.
+- The dashboard's own item grids are a separate surface; leave them as-is unless asked.
 
 
 ## History
