@@ -2,16 +2,50 @@
 
 import { auth } from "@/auth";
 import {
+  createItem as createItemQuery,
   deleteItem as deleteItemQuery,
   updateItem as updateItemQuery,
   type ItemDetail,
 } from "@/lib/db/items";
 import { prisma } from "@/lib/prisma";
-import { updateItemSchema } from "@/lib/validations/items";
+import { createItemSchema, updateItemSchema } from "@/lib/validations/items";
 
 type ActionResult<T> =
   | { success: true; data: T }
   | { success: false; error: string };
+
+/**
+ * Create a new item from the "New Item" dialog.
+ *
+ * Validates the payload with Zod (source of truth) and requires a session. No
+ * ownership check is needed — the signed-in user owns the item they create, so
+ * `userId` comes straight from the session. Returns the new `ItemDetail`.
+ */
+export async function createItem(
+  input: unknown,
+): Promise<ActionResult<ItemDetail>> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { success: false, error: "You must be signed in" };
+  }
+
+  const parsed = createItemSchema.safeParse(input);
+  if (!parsed.success) {
+    const message = parsed.error.issues[0]?.message ?? "Invalid input";
+    return { success: false, error: message };
+  }
+
+  try {
+    const data = await createItemQuery(session.user.id, parsed.data);
+    return { success: true, data };
+  } catch (error) {
+    console.error("Create item failed:", error);
+    return {
+      success: false,
+      error: "Something went wrong. Please try again.",
+    };
+  }
+}
 
 /**
  * Update an item from the drawer's edit mode.
