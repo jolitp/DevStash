@@ -2,10 +2,22 @@ import { NextResponse } from "next/server";
 
 import { resetPassword } from "@/lib/auth/password-reset";
 import { resetPasswordSchema } from "@/lib/validations/auth";
+import {
+  checkRateLimit,
+  getClientIp,
+  tooManyRequestsResponse,
+} from "@/lib/rate-limit";
 
 // POST /api/auth/reset-password — set a new password using a valid reset token.
 // Body: { token, password, confirmPassword }
 export async function POST(request: Request) {
+  // Throttle per IP to prevent brute-forcing reset tokens.
+  const { success, reset } = await checkRateLimit(
+    "resetPassword",
+    getClientIp(request),
+  );
+  if (!success) return tooManyRequestsResponse(reset);
+
   let body: unknown;
   try {
     body = await request.json();

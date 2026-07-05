@@ -3,11 +3,23 @@ import { NextResponse } from "next/server";
 import { getBaseUrl } from "@/lib/auth/verification";
 import { sendPasswordResetEmail } from "@/lib/auth/password-reset";
 import { requestResetSchema } from "@/lib/validations/auth";
+import {
+  checkRateLimit,
+  getClientIp,
+  tooManyRequestsResponse,
+} from "@/lib/rate-limit";
 
 // POST /api/auth/forgot-password — request a password-reset link.
 // Always responds 200 with a generic message: it never reveals whether the
 // email exists or is resettable (prevents account enumeration).
 export async function POST(request: Request) {
+  // Throttle reset requests per IP to curb email-bombing / enumeration probing.
+  const { success, reset } = await checkRateLimit(
+    "forgotPassword",
+    getClientIp(request),
+  );
+  if (!success) return tooManyRequestsResponse(reset);
+
   let body: unknown;
   try {
     body = await request.json();

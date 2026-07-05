@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import { MailCheck, Loader2 } from "lucide-react";
 
 import { requestResetSchema } from "@/lib/validations/auth";
@@ -36,7 +37,9 @@ export function ForgotPasswordForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong. Please try again.");
+        const message = data.error ?? "Something went wrong. Please try again.";
+        setError(message);
+        if (res.status === 429) toast.error(message);
         setPending(false);
         return;
       }

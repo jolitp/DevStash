@@ -7,6 +7,7 @@ import authConfig from "@/auth.config";
 import { prisma } from "@/lib/prisma";
 import { isEmailVerificationEnabled } from "@/lib/auth/email-verification";
 import { signInSchema } from "@/lib/validations/auth";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 // Thrown when the password is correct but the email hasn't been verified. The
 // `code` surfaces to the client as `result.code` so the sign-in form can show a
@@ -15,17 +16,32 @@ class EmailNotVerifiedError extends CredentialsSignin {
   code = "EmailNotVerified";
 }
 
+// Thrown when too many login attempts have been made for this IP + email. The
+// `code` surfaces to the client so the sign-in form can show a throttle message.
+class RateLimitedError extends CredentialsSignin {
+  code = "RateLimited";
+}
+
 // Real Credentials implementation (Node runtime only): validates the shape with
 // Zod, looks the user up by email, and compares the password with bcrypt. Users
 // created via OAuth have no password, so they can't sign in this way. Returns
 // null on any failure to keep the error generic ("invalid credentials").
 const credentialsProvider = Credentials({
   credentials: { email: {}, password: {} },
-  authorize: async (credentials) => {
+  authorize: async (credentials, request) => {
     const parsed = signInSchema.safeParse(credentials);
     if (!parsed.success) return null;
 
     const { email, password } = parsed.data;
+
+    // Throttle login attempts by IP + email to blunt brute-force / credential
+    // stuffing. Runs before the DB lookup so throttled requests are cheap.
+    const { success: allowed } = await checkRateLimit(
+      "login",
+      `${getClientIp(request)}:${email}`,
+    );
+    if (!allowed) throw new RateLimitedError();
+
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user?.password) return null;
 

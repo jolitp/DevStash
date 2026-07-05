@@ -39,7 +39,9 @@ export function ResetPasswordForm({ token }: { token: string }) {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error ?? "Something went wrong. Please try again.");
+        const message = data.error ?? "Something went wrong. Please try again.";
+        setError(message);
+        if (res.status === 429) toast.error(message);
         setPending(false);
         return;
       }

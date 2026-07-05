@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 import { signInSchema } from "@/lib/validations/auth";
@@ -54,6 +55,10 @@ export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
       if (result.code === "EmailNotVerified") {
         setUnverifiedEmail(parsed.data.email);
         setError("Please verify your email before signing in.");
+      } else if (result.code === "RateLimited") {
+        const message = "Too many attempts. Please try again later.";
+        setError(message);
+        toast.error(message);
       } else {
         setError("Invalid email or password");
       }
