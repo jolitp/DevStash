@@ -4,15 +4,27 @@
 
 <!-- Not Started|In Progress|Completed -->
 
-Not Started
+In Progress
 
 ## Goals
 
 <!-- Goals & requirements -->
 
+Set up **Vitest** for unit testing, scoped to **server actions and utilities only** —
+NOT React components. Provide the config, scripts, and a starter set of tests over the
+pure utilities so the harness is proven end-to-end. Update the workflow in
+`context/ai-interaction.md` (and any other docs) to fold testing into the standard flow.
+
 ## Notes
 
 <!-- Any extra notes -->
+
+- Node environment (no jsdom / React Testing Library — we don't test components).
+- Resolve the `@/*` path alias via `vite-tsconfig-paths`.
+- Colocated `*.test.ts` files next to the code they cover.
+- Starter coverage: `format.ts`, `avatar.ts`, `validations/auth.ts`, `auth/email-verification.ts`.
+- DB-backed selectors (`src/lib/db/*`) and Prisma-touching auth logic are left for later
+  (need Prisma mocking) — start with pure functions.
 
 
 ## History

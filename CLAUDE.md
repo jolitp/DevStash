@@ -29,9 +29,10 @@ Package manager is **pnpm** (see `pnpm-lock.yaml`, `pnpm-workspace.yaml`).
 - `pnpm build` — production build
 - `pnpm start` — serve the production build
 - `pnpm lint` — ESLint (flat config, `eslint-config-next` presets)
+- `pnpm test` — run unit tests once (Vitest). `pnpm test:watch` for watch mode.
 - `pnpm db:migrate` — create/apply a Prisma migration (dev). Also `db:generate`, `db:deploy`, `db:studio`.
 
-No test framework is configured.
+**Testing:** Vitest (Node environment) covers **server actions and utilities only** — not React components. Tests are colocated as `src/**/*.test.ts` and import their APIs explicitly (no globals). See `context/ai-interaction.md` → Testing for scope and conventions.
 
 ## Database / Prisma on NixOS
 
