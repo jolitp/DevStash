@@ -1,15 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Check,
-  Copy,
-  FolderOpen,
-  Pencil,
-  Pin,
-  Star,
-  Trash2,
-} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Check, Copy, FolderOpen, Pencil, Pin, Star } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +16,7 @@ import { fileExtension, formatFileSize, formatRelativeTime } from "@/lib/format"
 import { ITEM_TYPE_ICONS } from "@/lib/item-type-icons";
 import { cn } from "@/lib/utils";
 
+import { DeleteItemButton } from "./DeleteItemButton";
 import { ItemEditForm } from "./ItemEditForm";
 import { useItemDrawer } from "./item-drawer-context";
 
@@ -143,6 +137,7 @@ interface FetchResult {
 }
 
 export function ItemDrawer() {
+  const router = useRouter();
   const { item, open, setOpen } = useItemDrawer();
   const [result, setResult] = useState<FetchResult | null>(null);
   // Which item is being edited; `editing` derives from this so switching items
@@ -341,10 +336,15 @@ export function ItemDrawer() {
             {/* Footer actions — hidden in edit mode (Save/Cancel live inline). */}
             {!editing && (
               <div className="flex items-center gap-2 border-t border-border px-6 py-4">
-                <Button variant="destructive" size="sm" disabled={!detail}>
-                  <Trash2 />
-                  Delete
-                </Button>
+                <DeleteItemButton
+                  itemId={itemId ?? ""}
+                  title={detail?.title ?? item.title}
+                  disabled={!detail}
+                  onDeleted={() => {
+                    setOpen(false);
+                    router.refresh();
+                  }}
+                />
                 <Button
                   size="sm"
                   className="ml-auto"

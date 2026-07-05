@@ -233,3 +233,18 @@ export async function updateItem(
   }
   return detail;
 }
+
+/**
+ * Delete an item and its tag joins. Ownership must be checked by the caller (the
+ * server action) before this runs. Removes the item's `ItemTag` joins first,
+ * then the item itself, in one transaction (FK-safe order). Tag rows themselves
+ * are never deleted here — only the joins, matching `updateItem`.
+ */
+export async function deleteItem(id: string, ownerId: string): Promise<void> {
+  await prisma.$transaction([
+    prisma.itemTag.deleteMany({ where: { itemId: id } }),
+    // Scope by owner too, so a stale/racey call can never delete another
+    // user's item even if the caller's check passed on old data.
+    prisma.item.deleteMany({ where: { id, userId: ownerId } }),
+  ]);
+}
