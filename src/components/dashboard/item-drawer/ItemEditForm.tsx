@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { updateItem } from "@/actions/items";
 import { Button } from "@/components/ui/button";
+import { CodeEditor } from "@/components/ui/code-editor";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { ItemDetail } from "@/lib/db/items";
@@ -122,14 +123,25 @@ export function ItemEditForm({
 
       {showContent && (
         <Field label="Content" htmlFor="edit-content">
-          <Textarea
-            id="edit-content"
-            value={content}
-            onChange={(event) => setContent(event.target.value)}
-            rows={6}
-            className="font-mono text-xs"
-            disabled={saving}
-          />
+          {/* Code types (snippet/command) get the Monaco editor; prose types
+              (prompt/note) stay on the plain textarea. */}
+          {showLanguage ? (
+            <CodeEditor
+              value={content}
+              onChange={setContent}
+              language={language}
+              disabled={saving}
+            />
+          ) : (
+            <Textarea
+              id="edit-content"
+              value={content}
+              onChange={(event) => setContent(event.target.value)}
+              rows={6}
+              className="font-mono text-xs"
+              disabled={saving}
+            />
+          )}
         </Field>
       )}
 
